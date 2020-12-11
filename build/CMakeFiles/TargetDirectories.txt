@@ -1,7 +1,0 @@
-/mnt/c/Users/yurok/Desktop/Учеба/3sem/OS/LAB06-08/build/CMakeFiles/rebuild_cache.dir
-/mnt/c/Users/yurok/Desktop/Учеба/3sem/OS/LAB06-08/build/CMakeFiles/edit_cache.dir
-/mnt/c/Users/yurok/Desktop/Учеба/3sem/OS/LAB06-08/build/CMakeFiles/test_server.dir
-/mnt/c/Users/yurok/Desktop/Учеба/3sem/OS/LAB06-08/build/CMakeFiles/test_client.dir
-/mnt/c/Users/yurok/Desktop/Учеба/3sem/OS/LAB06-08/build/src/CMakeFiles/rebuild_cache.dir
-/mnt/c/Users/yurok/Desktop/Учеба/3sem/OS/LAB06-08/build/src/CMakeFiles/edit_cache.dir
-/mnt/c/Users/yurok/Desktop/Учеба/3sem/OS/LAB06-08/build/src/CMakeFiles/zmq_test.dir
