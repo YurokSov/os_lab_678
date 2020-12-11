@@ -1,0 +1,1 @@
+/usr/bin/c++    -rdynamic CMakeFiles/zmq_test.dir/main.cpp.o  -o zmq_test  /usr/lib/x86_64-linux-gnu/libzmq.so 
