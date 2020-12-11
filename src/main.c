@@ -8,7 +8,7 @@
 
 int main(void) {
 
-
+    printf("test main\n");
 
     return EXIT_SUCCESS;
 }
