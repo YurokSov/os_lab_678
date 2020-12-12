@@ -100,7 +100,7 @@ void _LOG_WRITE(int level, const char* file, int line, const char* format, ...) 
         }
 
         fprintf(UD_LOG_FILE, "[%s PID:%d][%s (%d)]: ", buffer, _GET_PID(), file, line);
-        fprintf(UD_LOG_FILE, format, args);
+        vfprintf(UD_LOG_FILE, format, args);
         fprintf(UD_LOG_FILE, "\n");
         fflush(UD_LOG_FILE);
         free(buffer);

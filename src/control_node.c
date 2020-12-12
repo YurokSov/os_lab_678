@@ -75,10 +75,9 @@ execute_status execute_create(create_cmd* cmd_info, void** result) {
             int path_len;
             int* path = get_path(tree_ptr, ntable[ntable_size - 1].info.id, &path_len);
             mm_send_creat(path, path_len);
-            printf("Ok: %d", fork_res);
+            printf("Ok: %d\n", fork_res);
         }
         else if (fork_res == 0) {
-            LOG(LL_NOTE, "In Child, fresh meat");
             if (node_start() != ns_ok)
                 status = es_node_error;
             exit(EXIT_SUCCESS);

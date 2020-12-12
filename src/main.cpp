@@ -30,23 +30,8 @@ int main_repl() {
         execute_cmd(&cmd, &cmd_info, &result);
         //print_result(result);
     }
-    LOG(LL_NOTE, "!!!REPL END!!!");
     kill_childs();
     return true;
-}
-
-void __attribute__((constructor)) init() {
-    if (!_LOG_INIT())
-        exit(-1);
-    if (!init_control_node())
-        exit(-2);
-}
-
-void __attribute((destructor)) fini() {
-    if (!_LOG_DEINIT())
-        exit(-1);
-    if (!deinit_control_node())
-        exit(-2);
 }
 
 int start() {
@@ -109,7 +94,16 @@ int test_avl() {
 }
 
 int main(int argc, char* argv[]) {
+    if (!_LOG_INIT())
+        exit(-1);
+    if (!init_control_node())
+        exit(-2);
 
-    //return start();
-    return test_avl();
+    start();
+    //return test_avl();
+
+    if (!deinit_control_node())
+        exit(-2);
+    if (!_LOG_DEINIT())
+        exit(-1);
 }

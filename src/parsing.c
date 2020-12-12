@@ -25,7 +25,6 @@ parse_status parse_command(cmd_enum* cmd) {
     else
         status = pse_error;
     free(command);
-    LOG(LL_DEBUG, "successfully got command");
     return status;
 }
 
@@ -92,7 +91,5 @@ parse_status get_cmd_info(cmd_enum* cmd, command_u* cmd_info) {
         __builtin_unreachable();
         exit(-1);
     }
-    if (status == pse_ok)
-        LOG(LL_DEBUG, "successfully got command params");
     return status;
 }

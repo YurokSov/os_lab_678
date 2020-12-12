@@ -19,7 +19,7 @@ static void catch_sigterm(int signo) {
 node_status node_loop() {
     while (true) {
         LOG(LL_DEBUG, "IN CHILD, AILVE");
-        sleep(1);
+        sleep(10);
     }
 }
 
