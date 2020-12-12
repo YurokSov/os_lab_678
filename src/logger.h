@@ -36,7 +36,9 @@
 
 QWORD _GET_TIME_STAMP();
 
-STRING _GET_DATETIME();
+char* _GET_DATETIME();
+
+pid_t _GET_PID();
 
 bool _LOG_INIT();
 

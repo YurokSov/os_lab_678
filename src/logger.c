@@ -15,8 +15,8 @@ QWORD _GET_TIME_STAMP() {
 /**
  * @warning не потокобезопасный
  */
-STRING _GET_DATETIME() {
-    STRING buffer = malloc(_LOG_BUF_SIZE * sizeof(CHAR));
+char* _GET_DATETIME() {
+    char* buffer = malloc(_LOG_BUF_SIZE * sizeof(char));
     time_t now = time(0);
 
     strftime(buffer, _LOG_BUF_SIZE, "%Y-%m-%d.%X", localtime(&now));
@@ -32,6 +32,11 @@ bool _LOG_INIT() {
         return false;
     }
     return true;
+}
+
+pid_t _GET_PID() {
+    pid_t pid = getpid();
+    return pid;
 }
 
 bool _LOG_DEINIT() {
@@ -50,7 +55,7 @@ void _LOG_WRITE(int level, const char* file, int line, const char* format, ...) 
         va_list args;
         va_start(args, format);
 
-        STRING buffer = _GET_DATETIME();
+        char* buffer = _GET_DATETIME();
 
         switch (level) {
         case LL_FATAL:
@@ -73,7 +78,7 @@ void _LOG_WRITE(int level, const char* file, int line, const char* format, ...) 
             break;
         }
 
-        fprintf(UD_LOG_FILE, "[%s][%s (%d)]: ", buffer, file, line);
+        fprintf(UD_LOG_FILE, "[%s PID:%d][%s (%d)]: ", buffer, _GET_PID(), file, line);
         fprintf(UD_LOG_FILE, format, args);
         fprintf(UD_LOG_FILE, "\n");
         fflush(UD_LOG_FILE);
@@ -82,4 +87,16 @@ void _LOG_WRITE(int level, const char* file, int line, const char* format, ...) 
     }
 
     pthread_mutex_unlock(&_log_mutex);
+}
+
+int __attribute__((destructor(101)))_logger_deinit() {
+    if (!_LOG_DEINIT()) {
+        return EXIT_FAILURE;
+    }
+}
+
+int __attribute__((constructor(101))) _logger_init() {
+    if (!_LOG_INIT()) {
+        return EXIT_FAILURE;
+    }
 }
