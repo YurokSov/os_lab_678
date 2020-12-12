@@ -2,6 +2,7 @@
 #define INCLUDE_PROCESSOR_H
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "parsing.h"
 #include "defines.h"
@@ -20,9 +21,12 @@ typedef struct node_info {
 } node_info;
 
 typedef struct node {
-    node_info* info;
+    bool is_alive;
+    node_info info;
 } node;
 
 execute_status execute_cmd(cmd_enum* cmd, command_u* cmd_info, void** result);
+
+void kill_childs();
 
 #endif

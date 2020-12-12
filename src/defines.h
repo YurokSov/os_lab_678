@@ -15,4 +15,6 @@ typedef signed char SBYTE;
 
 #define BAD_ALLOC 1
 
+#define ERROR_CODE -1
+
 #endif

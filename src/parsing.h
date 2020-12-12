@@ -8,7 +8,7 @@ typedef enum cmd_enum {
 } cmd_enum;
 
 typedef enum parse_status {
-    pse_ok = 0, pse_error = 1,
+    pse_ok, pse_error, pse_eof,
 } parse_status;
 
 typedef struct create_cmd {

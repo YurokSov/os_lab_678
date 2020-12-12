@@ -9,9 +9,11 @@
 #include "logger.h"
 
 parse_status parse_command(cmd_enum* cmd) {
+    parse_status status = pse_ok;
     char* command = malloc(STRBUF_LEN * sizeof(char));
     printf("> ");
-    scanf("%s", command);
+    if (scanf("%s", command) == EOF)
+        return pse_eof;
     if (!strcmp(command, "create"))
         *cmd = ce_create;
     else if (!strcmp(command, "remove"))
@@ -21,9 +23,10 @@ parse_status parse_command(cmd_enum* cmd) {
     else if (!strcmp(command, "pingall"))
         *cmd = ce_pingall;
     else
-        return pse_error;
+        status = pse_error;
+    free(command);
     LOG(LL_DEBUG, "successfully got command");
-    return pse_ok;
+    return status;
 }
 
 parse_status parse_create(create_cmd* cmd) {

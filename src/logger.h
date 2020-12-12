@@ -29,7 +29,7 @@
 #endif
 
 #ifndef UD_LOG_FILE
-#define UD_LOG_FILE stdout
+#define UD_LOG_FILE stderr
 #endif
 
 #define _LOG_BUF_SIZE 80
@@ -43,6 +43,8 @@ pid_t _GET_PID();
 bool _LOG_INIT();
 
 bool _LOG_DEINIT();
+
+bool _LOG_FINAL();
 
 void _LOG_WRITE(int level, const char* file, int line, const char* format, ...);
 
