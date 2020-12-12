@@ -1,5 +1,9 @@
 #include "avl.hpp"
 
+extern "C" {
+#include "logger.h"
+}
+
 // поиск по дереву - начало
 std::vector<int32_t> avl_tree::search(int32_t pid) {
     std::vector<int32_t> path;
@@ -11,10 +15,12 @@ void avl_tree::_search(int32_t pid, std::vector<int32_t>& path, std::shared_ptr<
     if (node == nullptr) {
         path.clear();
         return;
-    } else if (pid == node->pid) {
+    }
+    else if (pid == node->pid) {
         path.push_back(node->pid);
         return;
-    } else {
+    }
+    else {
         path.push_back(node->pid);
         std::shared_ptr<tree_node> to = pid < node->pid ? node->left : node->right;
         return _search(pid, path, to);
@@ -35,20 +41,26 @@ void avl_tree::_left_rotate(std::shared_ptr<tree_node> node) {
         right_son->left->parent = node;
     }
     right_son->parent = node->parent;
-    if (node->parent == nullptr) {
+    if (node == _root) {
         _root = right_son;
-    } else if (node == node->parent->left) {
-        node->parent->left = right_son;
-    } else {
-        node->parent->right = right_son;
+    }
+    else if (node == node->parent.lock()->left) {
+        node->parent.lock()->left = right_son;
+    }
+    else {
+        node->parent.lock()->right = right_son;
     }
     right_son->left = node;
-    node->parent = right_son; 
+    node->parent = right_son;
+
+    node->balance++;
+    right_son->balance++;
 
     if (node_b == -2 && rs_b == -1) {
         node->balance = 0;
         right_son->balance = 0;
-    } else if (node_b == -2 && rs_b == 0) {
+    }
+    else if (node_b == -2 && rs_b == 0) {
         node->balance = -1;
         right_son->balance = 1;
     }
@@ -66,20 +78,26 @@ void avl_tree::_right_rotate(std::shared_ptr<tree_node> node) {
         left_son->right->parent = node;
     }
     left_son->parent = node->parent;
-    if (node->parent == nullptr) {
+    if (node == _root) {
         _root = left_son;
-    } else if (node == node->parent->right) {
-        node->parent->right = left_son;
-    } else {
-        node->parent->left = left_son;
+    }
+    else if (node == node->parent.lock()->right) {
+        node->parent.lock()->right = left_son;
+    }
+    else {
+        node->parent.lock()->left = left_son;
     }
     left_son->right = node;
-    node->parent = left_son; 
+    node->parent = left_son;
+
+    node->balance--;
+    left_son->balance--;
 
     if (node_b == 2 && ls_b == 1) {
         node->balance = 0;
         left_son->balance = 0;
-    } else if (node_b == 2 && ls_b == 0) {
+    }
+    else if (node_b == 2 && ls_b == 0) {
         node->balance = 1;
         left_son->balance = -1;
     }
@@ -89,16 +107,17 @@ void avl_tree::_right_rotate(std::shared_ptr<tree_node> node) {
 // перебалансировка - начало
 std::shared_ptr<tree_node> avl_tree::_rebalance(std::shared_ptr<tree_node> node) {
     if (node->balance == -2) {
-        if(node->right->balance > 0) {
+        if (node->right->balance > 0) {
             _right_rotate(node->right);
         }
         _left_rotate(node);
-    } else {
-        if(node->left->balance < 0)
+    }
+    else {
+        if (node->left->balance < 0)
             _left_rotate(node->left);
         _right_rotate(node);
     }
-    return node->parent;
+    return node->parent.lock();
 }
 // перебалансировка - конец
 
@@ -107,7 +126,8 @@ bool avl_tree::insert(int32_t pid) {
     if (_root == nullptr) {
         _root = std::shared_ptr<tree_node>(new tree_node(pid));
         return true;
-    } else {
+    }
+    else {
         return _insert(pid, _root);
     }
 }
@@ -115,22 +135,26 @@ bool avl_tree::insert(int32_t pid) {
 bool avl_tree::_insert(int32_t pid, std::shared_ptr<tree_node> node) {
     if (pid == node->pid) {
         return false;
-    } else if (pid < node->pid) {
+    }
+    else if (pid < node->pid) {
         if (node->left == nullptr) {
             node->left = std::shared_ptr<tree_node>(new tree_node(pid));
             node->left->parent = node;
             _go_up_insert(node, node->left);
             return true;
-        } else {
+        }
+        else {
             return _insert(pid, node->left);
         }
-    } else {
+    }
+    else {
         if (node->right == nullptr) {
             node->right = std::shared_ptr<tree_node>(new tree_node(pid));
             node->right->parent = node;
             _go_up_insert(node, node->right);
             return true;
-        } else {
+        }
+        else {
             return _insert(pid, node->right);
         }
     }
@@ -139,22 +163,25 @@ bool avl_tree::_insert(int32_t pid, std::shared_ptr<tree_node> node) {
 void avl_tree::_go_up_insert(std::shared_ptr<tree_node> node, std::shared_ptr<tree_node> prev) {
     if (prev == node->left) {
         node->balance++;
-    } else {
+    }
+    else {
         node->balance--;
     }
     if (node->balance == 0) {
         return;
-    } else if (std::abs(node->balance) == 1) {
-        if (node->parent == nullptr) {
+    }
+    else if (std::abs(node->balance) == 1) {
+        if (node == _root) {
             return;
         }
-        _go_up_insert(node->parent, node);
-    } else {
+        _go_up_insert(node->parent.lock(), node);
+    }
+    else {
         node = _rebalance(node);
-        if (node->balance == 0 || node->parent == nullptr) {
+        if (node->balance == 0 || node == _root) {
             return;
         }
-        _go_up_insert(node->parent, node);
+        _go_up_insert(node->parent.lock(), node);
     }
 }
 
@@ -166,7 +193,7 @@ void avl_tree::print() {
 }
 
 void avl_tree::_print(const std::string& prefix, std::shared_ptr<tree_node> node, bool is_left, int32_t height) {
-    if( node != nullptr ) {
+    if (node != nullptr) {
         std::string new_prefix = "";
         for (int32_t i = 0; i < height; ++i) {
             new_prefix += "    ";
@@ -175,12 +202,13 @@ void avl_tree::_print(const std::string& prefix, std::shared_ptr<tree_node> node
         std::cout << prefix;
         if (height == 1) {
             std::cout << "───";
-        } else {
-            std::cout << (is_left ? "┌──" : "└──" );
+        }
+        else {
+            std::cout << (is_left ? "┌──" : "└──");
         }
         std::cout << node->pid << "\n";
         _print(new_prefix, node->right, false, height + 1);
-    }    
+    }
 }
 // вывод дерева на экран - конец
 
@@ -190,6 +218,10 @@ bool avl_tree::delete_sub_tree(int32_t pid) {
     if (to_delete == nullptr) {
         return false;
     }
+    if (to_delete == _root) {
+        _root = nullptr;
+        return true;
+    }
     _delete_sub_tree(to_delete);
     _reconstruct();
     return true;
@@ -198,9 +230,11 @@ bool avl_tree::delete_sub_tree(int32_t pid) {
 std::shared_ptr<tree_node> avl_tree::_find(int32_t pid, std::shared_ptr<tree_node> node) {
     if (node == nullptr) {
         return nullptr;
-    } else if (pid == node->pid) {
+    }
+    else if (pid == node->pid) {
         return node;
-    } else {
+    }
+    else {
         std::shared_ptr<tree_node> to = pid < node->pid ? node->left : node->right;
         return _find(pid, to);
     }
@@ -209,13 +243,15 @@ std::shared_ptr<tree_node> avl_tree::_find(int32_t pid, std::shared_ptr<tree_nod
 void avl_tree::_delete_sub_tree(std::shared_ptr<tree_node> node) {
     if (node == nullptr) {
         return;
-    } else {
-        if (node->parent->left == node) {
-            node->parent->left = nullptr;
-        } else {
-            node->parent->right = nullptr;
+    }
+    else {
+        if (node->parent.lock()->left == node) {
+            node->parent.lock()->left = nullptr;
         }
-        node->parent = nullptr;
+        else {
+            node->parent.lock()->right = nullptr;
+        }
+        node->parent.lock() = nullptr;
     }
 }
 
@@ -240,6 +276,7 @@ void avl_tree::_rec_reconstruct(std::shared_ptr<tree_node>& new_root, std::share
 bool avl_tree::remove(int32_t pid) {
     std::shared_ptr<tree_node> node = _root;
     while ((node != nullptr) && (pid != node->pid)) {
+        LOG(LL_DEBUG, "search %d Node-pid: %d", pid, node->pid);
         std::shared_ptr<tree_node> to = (pid < node->pid) ? node->left : node->right;
         node = to;
     }
@@ -259,65 +296,76 @@ void avl_tree::_remove(std::shared_ptr<tree_node> node) {
         to_replace = node->right;
         if (to_replace != nullptr) {
             to_replace->parent = node->parent;
-            to_replace_parent = node->parent;
-        } else {
-            to_replace_parent = node->parent;
+            to_replace_parent = node->parent.lock();
+        }
+        else {
+            to_replace_parent = node->parent.lock();
             if (node == _root) {
                 to_replace_parent = nullptr;
                 _root = nullptr;
             }
         }
-        if (node->parent != nullptr) {
-            if (node->parent->left == node) {
-                node->parent->left = to_replace;
-            } else {
-                node->parent->right = to_replace;
+        LOG(LL_DEBUG, "Node-pid: %d", node->pid);
+        if (node != _root) {
+            if (node->parent.lock()->left == node) {
+                node->parent.lock()->left = to_replace;
             }
-        } else {
+            else {
+                node->parent.lock()->right = to_replace;
+            }
+        }
+        else {
             _root = to_replace;
         }
-    } else if (node->right == nullptr) {
+    }
+    else if (node->right == nullptr) {
         to_replace = node->left;
         to_replace->parent = node->parent;
-        to_replace_parent = node->parent;
-        if (node->parent != nullptr) {
-            if (node->parent->left == node) {
-                node->parent->left = to_replace;
-            } else {
-                node->parent->right = to_replace;
+        to_replace_parent = node->parent.lock();
+        if (node != _root) {
+            if (node->parent.lock()->left == node) {
+                node->parent.lock()->left = to_replace;
             }
-        } else {
+            else {
+                node->parent.lock()->right = to_replace;
+            }
+        }
+        else {
             _root = to_replace;
-        }           
-    } else {
+        }
+    }
+    else {
         std::shared_ptr<tree_node> min_in_right = node->right;
-        while(min_in_right->left != nullptr) {
+        while (min_in_right->left != nullptr) {
             min_in_right = min_in_right->left;
         }
         to_delete = min_in_right;
         to_delete_balance = to_delete->balance;
         to_replace = to_delete->right;
-        if (to_delete->parent == node) {
+        if (to_delete->parent.lock() == node) {
             if (to_replace != nullptr) {
                 to_replace->parent = to_delete;
             }
             to_replace_parent = to_delete;
-        } else {
-            to_delete->parent->left = to_replace;
+        }
+        else {
+            to_delete->parent.lock()->left = to_replace;
             if (to_replace != nullptr) {
                 to_replace->parent = to_delete->parent;
             }
-            to_replace_parent = to_delete->parent;
+            to_replace_parent = to_delete->parent.lock();
             to_delete->right = node->right;
             to_delete->right->parent = to_delete;
         }
-        if (node->parent != nullptr) {
-            if (node->parent->left == node) {
-                node->parent->left = to_delete;
-            } else {
-                node->parent->right = to_delete;
+        if (node != _root) {
+            if (node->parent.lock()->left == node) {
+                node->parent.lock()->left = to_delete;
             }
-        } else {
+            else {
+                node->parent.lock()->right = to_delete;
+            }
+        }
+        else {
             _root = to_delete;
         }
         to_delete->parent = node->parent;
@@ -325,28 +373,33 @@ void avl_tree::_remove(std::shared_ptr<tree_node> node) {
         to_delete->left->parent = to_delete;
         to_delete->balance = node->balance;
     }
-    _go_up_remove(to_replace_parent, to_replace);
+    if (to_replace_parent != nullptr) {
+        _go_up_remove(to_replace_parent, to_replace);
+    }
 }
- 
+
 void avl_tree::_go_up_remove(std::shared_ptr<tree_node> node, std::shared_ptr<tree_node> prev) {
     if (prev == node->left) {
         node->balance--;
-    } else {
+    }
+    else {
         node->balance++;
     }
     if (std::abs(node->balance) == 1) {
         return;
-    } else if (node->balance == 0) {
-        if (node->parent == nullptr) {
+    }
+    else if (node->balance == 0) {
+        if (node == _root) {
             return;
         }
-        _go_up_remove(node->parent, node);
-    } else {
+        _go_up_remove(node->parent.lock(), node);
+    }
+    else {
         node = _rebalance(node);
-        if (node->balance == 0 || node->parent == nullptr) {
+        if (node->balance == 0 || node == _root) {
             return;
         }
-        _go_up_remove(node->parent, node);
+        _go_up_remove(node->parent.lock(), node);
     }
 }
 // удаление вершины дерева - конец

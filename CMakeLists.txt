@@ -7,8 +7,13 @@ link_libraries(cppzmq)
 find_library(pthread REQUIRED)
 link_libraries(pthread)
 
+find_library(rt REQUIRED)
+link_libraries(rt)
+
+add_definitions("-g3")
+
 include_directories(${PROJECT_SOURCE_DIR}/include)
-file(GLOB_RECURSE  SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.c)
+file(GLOB_RECURSE  SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.c ${PROJECT_SOURCE_DIR}/src/*.cpp)
 
 add_executable(zmq_test ${SRC_FILES})
 

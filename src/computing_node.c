@@ -24,10 +24,15 @@ node_status node_loop() {
 }
 
 node_status node_start() {
+    // if (!_LOG_INIT())
+    //    printf("log init error in pid:%d", getpid());
     if (signal(SIGTERM, catch_sigterm) == SIG_ERR) {
         LOG(LL_ERROR, "An error occurred while setting a signal handler.\n");
         return ns_error;
     }
-    return node_loop();
+    node_status rv = node_loop();
+    //if (!_LOG_DEINIT())
+    //    printf("log deinit error in pid:%d", getpid());
+    return rv;
 }
 

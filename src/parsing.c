@@ -30,7 +30,9 @@ parse_status parse_command(cmd_enum* cmd) {
 }
 
 parse_status parse_create(create_cmd* cmd) {
-    if (scanf("%d %d", &cmd->id, &cmd->parent_id) != 2)
+    //if (scanf("%d %d", &cmd->id, &cmd->parent_id) != 2)
+    //    return pse_error;
+    if (scanf("%d", &cmd->id) != 1)
         return pse_error;
     return pse_ok;
 }
