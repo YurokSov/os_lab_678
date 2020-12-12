@@ -23,9 +23,11 @@ bool remove_from_tree(avl_tree* tree, int id) {
 }
 
 int get_parent_id(avl_tree* tree, int id) {
-    // auto elem = tree->search
+    return tree->get_parent_pid(id);
 }
 
 int* get_path(avl_tree* tree, int id, int* path_len) {
-    //... AVL get path
+    if (!tree->search(id, buffer, path_len))
+        *path_len = -1;
+    return buffer;
 }

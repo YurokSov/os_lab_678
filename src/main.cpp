@@ -62,7 +62,7 @@ int test_avl() {
     int key, cmd;
     cout << "1 -- add pid\n"
         << "2 -- print path to pid\n"
-        << "3 -- delete subtree with path\n"
+        << "3 -- delete subtree with pid\n"
         << "4 -- print tree\n"
         << "5 -- delete pid\n";
     while (true) {
@@ -75,13 +75,16 @@ int test_avl() {
         }
         else if (cmd == 2) {
             cin >> key;
-            vector<int> path;
-            path = tree.search(key);
+            int32_t len = 0;
+            int32_t* path = new int32_t[10];
+            bool res;
+            res = tree.search(key, path, &len);
             cout << "Path to " << key << " is:\n";
-            for (auto p : path) {
-                cout << p << " ";
+            for (int32_t i = 0; i < len; ++i) {
+                cout << path[i] << " ";
             }
             cout << "\n";
+            delete[] path;
         }
         else if (cmd == 3) {
             cin >> key;
@@ -94,6 +97,10 @@ int test_avl() {
             cin >> key;
             tree.remove(key);
         }
+        else if (cmd == 6) {
+            cin >> key;
+            cout << tree.get_parent_pid(key) << "\n";
+        }
         else {
             continue;
         }
@@ -103,6 +110,6 @@ int test_avl() {
 
 int main(int argc, char* argv[]) {
 
-    return start();
-    //return test_avl();
+    //return start();
+    return test_avl();
 }
