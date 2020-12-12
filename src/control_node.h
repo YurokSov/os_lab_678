@@ -25,7 +25,9 @@ typedef struct node {
     node_info info;
 } node;
 
-void init_control_node();
+bool init_control_node();
+
+bool deinit_control_node();
 
 execute_status execute_cmd(cmd_enum* cmd, command_u* cmd_info, void** result);
 

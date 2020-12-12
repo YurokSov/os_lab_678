@@ -1,20 +1,28 @@
 #include "control_node.h"
 #include "computing_node.h"
 #include "message_manager.h"
+#include "logger.h"
 
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include <stdlib.h>
 
-#include "logger.h"
+#include "avl_c_externs.h"
+
+static struct avl_tree* tree_ptr;
 
 static node ntable[MAX_NODES];
 static int ntable_size = 0;
 
-void init_control_node() {
+bool init_control_node() {
     for (int i = 0; i < MAX_NODES; ++i)
         ntable[i].is_alive = false;
+    return init_avl(&tree_ptr);
+}
+
+bool deinit_control_node() {
+    return deinit_avl(tree_ptr);
 }
 
 bool create_check_for_validity(create_cmd* cmd_info) {
@@ -41,24 +49,8 @@ bool exec_check_for_validity(exec_cmd* cmd_info) {
     return false;
 }
 
-bool add_to_tree(int id) {
-    //... AVL insert id
-}
-
-bool remove_from_tree(int id) {
-    //... AVL remove id
-}
-
-int get_parent_id(int id) {
-    //... AVL search for parent id
-}
-
-int* get_path(int id, int* path_len) {
-    //... AVL get route
-}
-
 void create_add_hook(create_cmd* cmd_info, int fork_res) {
-    if (!add_to_tree(cmd_info->id)) {
+    if (!add_to_tree(tree_ptr, cmd_info->id)) {
         LOG(LL_FATAL, "BAD TREE INSERT");
         exit(EXIT_FAILURE);
     }
@@ -66,7 +58,7 @@ void create_add_hook(create_cmd* cmd_info, int fork_res) {
     ntable[ntable_size].info.pid = fork_res;
     ntable[ntable_size].info.ppid = getpid();
     ntable[ntable_size].info.id = cmd_info->id;
-    ntable[ntable_size].info.parent_id = get_parent_id(cmd_info->id);
+    ntable[ntable_size].info.parent_id = get_parent_id(tree_ptr, cmd_info->id);
     ntable_size++;
 }
 
@@ -81,7 +73,7 @@ execute_status execute_create(create_cmd* cmd_info, void** result) {
             LOG(LL_NOTE, "In Parent, created child with id: %d", cmd_info->id);
             create_add_hook(cmd_info, fork_res);
             int path_len;
-            int* path = get_route(ntable[ntable_size - 1].info.id, &path_len);
+            int* path = get_path(tree_ptr, ntable[ntable_size - 1].info.id, &path_len);
             mm_send_creat(path, path_len);
             printf("Ok: %d", fork_res);
         }
@@ -119,7 +111,7 @@ execute_status execute_remove(remove_cmd* cmd_info, void** result) {
         }
         else {
             int path_len;
-            int* path = get_route(cmd_info->id, &path_len);
+            int* path = get_path(tree_ptr, cmd_info->id, &path_len);
             if (mm_send_remov(path, path_len) == mmr_ok)
                 printf("Ok\n");
             else
@@ -136,7 +128,7 @@ execute_status execute_exec(exec_cmd* cmd_info, void** result) {
     }
     else {
         int path_len;
-        int* path = get_route(cmd_info->id, &path_len);
+        int* path = get_path(tree_ptr, cmd_info->id, &path_len);
         search_pat_in_text cmd = { cmd_info->pattern_len, cmd_info->text_len, cmd_info->pattern, cmd_info->text };
         if (!mm_send_exec(cmd, path, path_len))
             status = es_msgq_error;
@@ -149,7 +141,7 @@ execute_status execute_pingall(pingall_cmd* cmd_info, void** result) {
     for (int i = 0; i < ntable_size; ++i) {
         if (ntable[i].is_alive) {
             int path_len;
-            int* path = get_route(ntable[i].info.id, &path_len);
+            int* path = get_path(tree_ptr, ntable[i].info.id, &path_len);
             if (mm_send_ping(path, path_len) != mmr_ok) {
                 status = es_msgq_error;
             }

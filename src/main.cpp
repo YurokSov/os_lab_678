@@ -38,11 +38,15 @@ int main_repl() {
 void __attribute__((constructor)) init() {
     if (!_LOG_INIT())
         exit(-1);
+    if (!init_control_node())
+        exit(-2);
 }
 
 void __attribute((destructor)) fini() {
     if (!_LOG_DEINIT())
         exit(-1);
+    if (!deinit_control_node())
+        exit(-2);
 }
 
 int start() {
@@ -99,6 +103,6 @@ int test_avl() {
 
 int main(int argc, char* argv[]) {
 
-    //return start();
-    return test_avl();
+    return start();
+    //return test_avl();
 }
