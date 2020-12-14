@@ -1,4 +1,4 @@
-#include "avl_wrapper.hpp"
+#include "utils/avl_wrapper.hpp"
 
 #define MAX_PATH_LEN 48
 
@@ -24,6 +24,10 @@ bool remove_from_tree(avl_tree* tree, int id) {
 
 int get_parent_id(avl_tree* tree, int id) {
     return tree->get_parent_pid(id);
+}
+
+int get_root_id(avl_tree* tree) {
+    return tree->get_root_pid();
 }
 
 int* get_path(avl_tree* tree, int id, int* path_len) {

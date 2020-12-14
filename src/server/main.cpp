@@ -8,14 +8,14 @@
 
 extern "C" {
 
-#include "defines.h"
-#include "logger.h"
-#include "parsing.h"
-#include "control_node.h"
+#include "core/defines.h"
+#include "utils/logger.h"
+#include "server/parsing.h"
+#include "server/control_node.h"
 
 }
 
-#include "avl.hpp"
+#include "utils/avl.hpp"
 #include <iostream>
 
 

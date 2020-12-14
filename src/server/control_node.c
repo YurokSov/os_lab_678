@@ -19,68 +19,53 @@ static int ntable_size = 0;
 bool init_control_node() {
     for (int i = 0; i < MAX_NODES; ++i)
         ntable[i].is_alive = false;
-    return init_avl(&tree_ptr);
+    return init_avl(&tree_ptr) && (mm_init_control_node() == mmr_ok);
 }
 
 bool deinit_control_node() {
-    return deinit_avl(tree_ptr);
-}
-
-bool create_check_for_validity(create_cmd* cmd_info) {
-    for (int i = 0; i < ntable_size; ++i) {
-        if (ntable[i].info.id == cmd_info->id) {
-            printf("Error: Already exists\n");
-            return false;
-        }
-    }
-    return true;
-}
-
-bool remove_check_for_validity(remove_cmd* cmd_info) {
-    for (int i = 0; i < ntable_size; ++i)
-        if (ntable[i].info.id == cmd_info->id)
-            return true;
-    return false;
-}
-
-bool exec_check_for_validity(exec_cmd* cmd_info) {
-    for (int i = 0; i < ntable_size; ++i)
-        if (ntable[i].info.id == cmd_info->id)
-            return true;
-    return false;
+    return deinit_avl(tree_ptr) && (mm_deinit_control_node() == mmr_ok);
 }
 
 void create_add_hook(create_cmd* cmd_info, int fork_res) {
-    if (!add_to_tree(tree_ptr, cmd_info->id)) {
-        LOG(LL_FATAL, "BAD TREE INSERT");
-        exit(EXIT_FAILURE);
-    }
     ntable[ntable_size].is_alive = true;
     ntable[ntable_size].info.pid = fork_res;
     ntable[ntable_size].info.ppid = getpid();
     ntable[ntable_size].info.id = cmd_info->id;
-    ntable[ntable_size].info.parent_id = get_parent_id(tree_ptr, cmd_info->id);
+    ntable[ntable_size].info.p_id = get_parent_id(tree_ptr, cmd_info->id);
     ntable_size++;
 }
 
 execute_status execute_create(create_cmd* cmd_info, void** result) {
     execute_status status = es_ok;
-    if (!create_check_for_validity(cmd_info)) {
-        status = es_bad_params;
+    bool found = false;
+    for (int i = 0; i < ntable_size; ++i) {
+        if (ntable[i].info.id == cmd_info->id) {
+            printf("Error: Already exists\n");
+            status = es_bad_params;
+            found = true;
+            break;
+        }
     }
-    else {
+    if (!found) {
         __pid_t fork_res = fork();
         if (fork_res > 0) {
             LOG(LL_NOTE, "In Parent, created child with id: %d", cmd_info->id);
+            if (!add_to_tree(tree_ptr, cmd_info->id)) {
+                LOG(LL_FATAL, "bad tree insert!");
+                exit(EXIT_FAILURE);
+            }
             create_add_hook(cmd_info, fork_res);
-            int path_len;
-            int* path = get_path(tree_ptr, ntable[ntable_size - 1].info.id, &path_len);
-            mm_send_creat(path, path_len);
-            printf("Ok: %d\n", fork_res);
+            if (mm_send_create(ntable[ntable_size - 1].info.id, ntable[ntable_size - 1].info.p_id) != mmr_ok) {
+                status = es_msgq_error;
+                printf("Error, couldn\'t link with node!\n");
+            }
+            else {
+                printf("Ok: %d\n", fork_res);
+            }
         }
         else if (fork_res == 0) {
-            if (node_start() != ns_ok)
-                status = es_node_error;
+            if (node_start(ntable[ntable_size - 1].info.id, ntable[ntable_size - 1].info.p_id) != ns_ok)
+                exit(EXIT_FAILURE);
             exit(EXIT_SUCCESS);
         }
         else {
@@ -94,28 +79,28 @@ execute_status execute_create(create_cmd* cmd_info, void** result) {
 
 execute_status execute_remove(remove_cmd* cmd_info, void** result) {
     execute_status status = es_ok;
-    if (!remove_check_for_validity(cmd_info)) {
+    LOG(LL_NOTE, "Killing child with id: %d", cmd_info->id);
+    bool found = false;
+    int index = -1;
+    for (int i = 0; i < ntable_size; ++i) {
+        if (ntable[i].info.id == cmd_info->id) {
+            found = true;
+            index = i;
+            break;
+        }
+    }
+    if (!found) {
+        printf("Error: Not found");
+        LOG(LL_NOTE, "no child with this id");
         status = es_bad_params;
     }
     else {
-        LOG(LL_NOTE, "Killing child with id: %d", cmd_info->id);
-        bool found = false;
-        for (int i = 0; i < ntable_size; ++i) {
-            if (ntable[i].info.id == cmd_info->id) {
-                found = true;
-            }
-        }
-        if (!found) {
-            printf("Error: Not found");
-            LOG(LL_NOTE, "child not found");
+        if (mm_send_remove(ntable[index].info.id, ntable[index].info.p_id) == mmr_ok) {
+            printf("Ok\n");
         }
         else {
-            int path_len;
-            int* path = get_path(tree_ptr, cmd_info->id, &path_len);
-            if (mm_send_remov(path, path_len) == mmr_ok)
-                printf("Ok\n");
-            else
-                printf("Error: Node is unavailable\n");
+            status = es_msgq_error;
+            printf("Error: Node is unavailable\n");
         }
     }
     return status;
@@ -123,30 +108,44 @@ execute_status execute_remove(remove_cmd* cmd_info, void** result) {
 
 execute_status execute_exec(exec_cmd* cmd_info, void** result) {
     execute_status status = es_ok;
-    if (!exec_check_for_validity(cmd_info)) {
-        status = es_bad_params;
+    bool found = false;
+    int index = -1;
+    for (int i = 0; i < ntable_size; ++i) {
+        if (ntable[i].info.id == cmd_info->id) {
+            found = true;
+            index = i;
+        }
+    }
+    if (found) {
+        mm_command cmd = { cmd_info->pattern_len, cmd_info->text_len, cmd_info->pattern, cmd_info->text };
+        if (mm_send_execute(cmd, ntable[index].info.id, ntable[index].info.p_id) != mmr_ok)
+            status = es_msgq_error;
     }
     else {
-        int path_len;
-        int* path = get_path(tree_ptr, cmd_info->id, &path_len);
-        search_pat_in_text cmd = { cmd_info->pattern_len, cmd_info->text_len, cmd_info->pattern, cmd_info->text };
-        if (!mm_send_exec(cmd, path, path_len))
-            status = es_msgq_error;
+        status = es_bad_params;
     }
     return status;
 }
 
 execute_status execute_pingall(pingall_cmd* cmd_info, void** result) {
     execute_status status = es_ok;
-    for (int i = 0; i < ntable_size; ++i) {
-        if (ntable[i].is_alive) {
-            int path_len;
-            int* path = get_path(tree_ptr, ntable[i].info.id, &path_len);
-            if (mm_send_ping(path, path_len) != mmr_ok) {
-                status = es_msgq_error;
-            }
-        }
+    int root_id = get_root_id(tree_ptr);
+    if (root_id != -1) {
+        if (mm_send_pingall(get_root_id(tree_ptr)) != mmr_ok)
+            status = es_msgq_error;
     }
+    else {
+        LOG(LL_NOTE, "Nothing to ping...");
+    }
+    // for (int i = 0; i < ntable_size; ++i) {
+    //     if (ntable[i].is_alive) {
+    //         int path_len;
+    //         int* path = get_path(tree_ptr, ntable[i].info.id, &path_len);
+    //         if (mm_send_ping(path, path_len) != mmr_ok) {
+    //             status = es_msgq_error;
+    //         }
+    //     }
+    // }
     return status;
 }
 

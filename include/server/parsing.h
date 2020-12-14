@@ -13,7 +13,7 @@ typedef enum parse_status {
 
 typedef struct create_cmd {
     DWORD id;
-    // DWORD parent_id;
+    // DWORD p_id;
 } create_cmd;
 
 typedef struct remove_cmd {

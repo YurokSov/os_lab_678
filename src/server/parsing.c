@@ -1,4 +1,4 @@
-#include "parsing.h"
+#include "server/parsing.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 
-#include "logger.h"
+#include "utils/logger.h"
 
 parse_status parse_command(cmd_enum* cmd) {
     parse_status status = pse_ok;
@@ -29,7 +29,7 @@ parse_status parse_command(cmd_enum* cmd) {
 }
 
 parse_status parse_create(create_cmd* cmd) {
-    //if (scanf("%d %d", &cmd->id, &cmd->parent_id) != 2)
+    //if (scanf("%d %d", &cmd->id, &cmd->p_id) != 2)
     //    return pse_error;
     if (scanf("%d", &cmd->id) != 1)
         return pse_error;

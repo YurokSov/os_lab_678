@@ -13,6 +13,8 @@ bool remove_from_tree(struct avl_tree* tree, int id);
 
 int get_parent_id(struct avl_tree* tree, int id);
 
+int get_root_id(struct avl_tree* tree);
+
 int* get_path(struct avl_tree* tree, int id, int* path_len);
 
 #endif

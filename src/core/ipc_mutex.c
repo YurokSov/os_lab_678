@@ -1,20 +1,19 @@
-#include "ipc_mutex.h"
+#include "core/ipc_mutex.h"
 
-#include <errno.h> // errno, ENOENT
-#include <fcntl.h> // O_RDWR, O_CREATE
-#include <linux/limits.h> // NAME_MAX
-#include <sys/mman.h> // shm_open, shm_unlink, mmap, munmap,
-// PROT_READ, PROT_WRITE, MAP_SHARED, MAP_FAILED
-#include <unistd.h> // ftruncate, close
-#include <stdio.h> // perror
-#include <stdlib.h> // malloc, free
-#include <string.h> // strcpy
+#include <errno.h>
+#include <fcntl.h>
+#include <linux/limits.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "defines.h"
+#include "core/defines.h"
 
 #define MAX_LEN 80
 

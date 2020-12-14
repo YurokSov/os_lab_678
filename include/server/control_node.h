@@ -17,7 +17,7 @@ typedef struct node_info {
     __pid_t pid;
     __pid_t ppid;
     DWORD id;
-    DWORD parent_id;
+    DWORD p_id;
 } node_info;
 
 typedef struct node {

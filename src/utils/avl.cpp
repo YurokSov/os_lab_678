@@ -1,4 +1,4 @@
-#include "avl.hpp"
+#include "utils/avl.hpp"
 
 // получить pid родителя - начало
 int32_t avl_tree::get_parent_pid(int32_t pid) {
@@ -9,6 +9,10 @@ int32_t avl_tree::get_parent_pid(int32_t pid) {
     return node->parent.lock()->pid;
 }
 // получить pid родителя - конец
+
+int32_t avl_tree::get_root_pid() {
+    return this->_root->pid;
+}
 
 // поиск по дереву - начало
 bool avl_tree::search(int32_t pid, int32_t* path, int32_t* path_len) {

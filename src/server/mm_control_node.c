@@ -2,8 +2,7 @@
 
 #include "utils/logger.h"
 #include "zmq.h"
-#include "zmq_utils.h"
-#include "string.h"
+//#include "zmq_utils.h"
 
 static zctx_t context;
 static zsock_t ping_sub;
@@ -12,83 +11,29 @@ static zsock_t root_pub;
 static int recv_timeout_ms = 100;
 static int node_connect_timeout_ms = 100;
 
-#define SOCK_PREFIX "ipc://lab/"
-
 mm_code mm_init_control_node() {
-    mm_code status = mmr_ok;
-
     context = zmq_ctx_new();
-    if (context == NULL) {
-        LOG(LL_FATAL, "couldn\'t create zmq_context");
-        perror("zmq_ctx_new ");
-        return mmr_error;
-    }
-
+    CTX_CREAT_ERR_CHK(context);
     ping_sub = zmq_socket(context, ZMQ_SUB);
-    if (ping_sub == NULL) {
-        LOG(LL_FATAL, "couldn\'t create ping_pub socket");
-        perror("zmq_socket ");
-        return mmr_error;
-    }
-    zmq_setsockopt(ping_sub, ZMQ_SUBSCRIBE, NULL, 0);
-    zmq_setsockopt(ping_sub, ZMQ_RCVTIMEO, &recv_timeout_ms, sizeof recv_timeout_ms);
-    zmq_setsockopt(ping_sub, ZMQ_CONNECT_TIMEOUT, &node_connect_timeout_ms, sizeof node_connect_timeout_ms);
+    SOCK_CREAT_ERR_CHK(ping_sub);
 
-    if (zmq_bind(ping_sub, MASTER_PING)) {
-        LOG(LL_FATAL, "ping_sub bind error!");
-        perror("zmq_bind ");
-        return mmr_error;
-    }
-
+    SETSOCKOPT_ERR_CHK(ping_sub, zmq_setsockopt(ping_sub, ZMQ_SUBSCRIBE, NULL, 0));
+    SETSOCKOPT_ERR_CHK(ping_sub, zmq_setsockopt(ping_sub, ZMQ_RCVTIMEO, &recv_timeout_ms, sizeof recv_timeout_ms));
+    SETSOCKOPT_ERR_CHK(ping_sub, zmq_setsockopt(ping_sub, ZMQ_CONNECT_TIMEOUT, &node_connect_timeout_ms, sizeof node_connect_timeout_ms));
+    SOCK_BIND_ERR_CHK(ping_sub, zmq_bind(ping_sub, MASTER_PING));
     root_pub = zmq_socket(context, ZMQ_PUB);
-    if (ping_sub == NULL) {
-        LOG(LL_FATAL, "couldn\'t create ping_pub socket");
-        perror("zmq_socket ");
-        return mmr_error;
-    }
-    if (zmq_bind(root_pub, MASTER_ROOT)) {
-        LOG(LL_FATAL, "root_ping bind error!");
-        perror("zmq_bind ");
-        return mmr_error;
-    }
-
-    return status;
+    SOCK_CREAT_ERR_CHK(root_pub);
+    SOCK_BIND_ERR_CHK(root_pub, zmq_bind(root_pub, MASTER_ROOT));
+    return mmr_ok;
 }
 
 mm_code mm_deinit_control_node() {
-    mm_code status = mmr_ok;
-
-    if (zmq_unbind(ping_sub, MASTER_PING)) {
-        LOG(LL_FATAL, "ping_sub unbind error!");
-        perror("zmq_unbind ");
-        return mmr_error;
-    }
-
-    if (zmq_unbind(root_pub, MASTER_ROOT)) {
-        LOG(LL_FATAL, "root_pub unbind error!");
-        perror("zmq_unbind ");
-        return mmr_error;
-    }
-
-    if (zmq_close(ping_sub)) {
-        LOG(LL_FATAL, "ping_sub close error!");
-        perror("zmq_close ");
-        return mmr_error;
-    }
-
-    if (zmq_close(root_pub)) {
-        LOG(LL_FATAL, "root_pub close error!");
-        perror("zmq_close ");
-        return mmr_error;
-    }
-
-    if (zmq_ctx_term(context)) {
-        LOG(LL_FATAL, "context terminate error!");
-        perror("zmq_ctx_term ");
-        return mmr_error;
-    }
-
-    return status;
+    SOCK_UNBIND_ERR_CHK(ping_sub, zmq_unbind(ping_sub, MASTER_PING));
+    SOCK_UNBIND_ERR_CHK(root_pub, zmq_unbind(ping_sub, MASTER_ROOT));
+    SOCK_CLOSE_ERR_CHK(ping_sub, zmq_close(ping_sub));
+    SOCK_CLOSE_ERR_CHK(root_pub, zmq_close(root_pub));
+    CTX_TERM_ERR_CHK(zmq_ctx_term(context));
+    return mmr_ok;
 }
 
 // mm_code mm_subscribe_control_node(int id) {
@@ -108,32 +53,33 @@ mm_code mm_deinit_control_node() {
 // }
 
 
-mm_code mm_send_rebind(int p_id, int id) {
+mm_code mm_send_rebind(int id, int p_id) {
     //TODO
     return mmr_ok;
 }
 
-mm_code mm_send_relax(int p_id, int id) {
+mm_code mm_send_relax(int id, int p_id) {
     //TODO
     return mmr_ok;
 }
 
-mm_code mm_send_create(int* path, int path_len) {
+mm_code mm_send_create(int id, int p_id) {
     //TODO
     return mmr_ok;
 }
 
-mm_code mm_send_remove(int* path, int path_len) {
+mm_code mm_send_remove(int id, int p_id) {
     //TODO
     return mmr_ok;
 }
 
-mm_code mm_send_exec(search_pat_in_text cmd, int* path, int path_len) {
+mm_code mm_send_execute(mm_command cmd, int id, int p_id) {
     //TODO
     return mmr_ok;
 }
 
-mm_code mm_send_ping(int* path, int path_len) {
+mm_code mm_send_pingall(int root_id) {
     //TODO
+    LOG(LL_NOTE, "Sending pingall to root node with id = %d.", root_id);
     return mmr_ok;
 }

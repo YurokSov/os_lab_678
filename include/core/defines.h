@@ -10,6 +10,10 @@ typedef signed int SDWORD;
 typedef signed short SWORD;
 typedef signed char SBYTE;
 
+#define str(s) #s
+#define xstr(s) str(s)
+
+
 #define STRBUF_LEN 256
 #define NEW_STRING malloc(STRBUF_LEN * sizeof(char))
 
