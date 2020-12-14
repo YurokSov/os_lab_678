@@ -31,7 +31,7 @@ void init() {
 }
 
 void fini() {
-    mm_deinit_computing_node(this_id, this_p_id);
+    mm_deinit_computing_node();
 }
 
 
@@ -57,3 +57,6 @@ node_status node_start(int id, int p_id) {
     return rv;
 }
 
+node_status execute_command(mm_command* data) {
+    printf("COMMAND EXECUTED!");
+}

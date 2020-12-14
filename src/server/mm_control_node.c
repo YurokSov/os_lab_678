@@ -11,8 +11,6 @@ static zctx_t context;
 static zsock_t ping_sub;
 static zsock_t root_pub;
 
-#define ROUTE "ipc://@lab/0"
-
 static int recv_timeout_ms = 1000;
 static int node_connect_timeout_ms = 1000;
 
@@ -21,22 +19,24 @@ mm_code mm_init_control_node() {
     CTX_CREAT_ERR_CHK(context);
     ping_sub = zmq_socket(context, ZMQ_SUB);
     SOCK_CREAT_ERR_CHK(ping_sub);
-
     SETSOCKOPT_ERR_CHK(ping_sub, zmq_setsockopt(ping_sub, ZMQ_SUBSCRIBE, NULL, 0));
     SETSOCKOPT_ERR_CHK(ping_sub, zmq_setsockopt(ping_sub, ZMQ_RCVTIMEO, &recv_timeout_ms, sizeof recv_timeout_ms));
     SETSOCKOPT_ERR_CHK(ping_sub, zmq_setsockopt(ping_sub, ZMQ_CONNECT_TIMEOUT, &node_connect_timeout_ms, sizeof node_connect_timeout_ms));
+
     SOCK_BIND_ERR_CHK(ping_sub, zmq_bind(ping_sub, MASTER_PING));
-    //LOG(LL_DEBUG, "MASTER PING SUB BIND ON %s", MASTER_PING);
+    LOG(LL_DEBUG, "root_ping sub bound ON %s", MASTER_PING);
     root_pub = zmq_socket(context, ZMQ_PUB);
     SOCK_CREAT_ERR_CHK(root_pub);
-    SOCK_CONNECT_ERR_CHK(root_pub, zmq_connect(root_pub, MASTER_ROOT));
-    //LOG(LL_DEBUG, "root_pub connected on %s", MASTER_ROOT);
+    //SOCK_CONNECT_ERR_CHK(root_pub, zmq_connect(root_pub, MASTER_ROOT));
+    SOCK_BIND_ERR_CHK(root_pub, zmq_bind(root_pub, MASTER_ROOT));
+    LOG(LL_DEBUG, "root_pub bound on %s", MASTER_ROOT);
     return mmr_ok;
 }
 
 mm_code mm_deinit_control_node() {
     SOCK_UNBIND_ERR_CHK(ping_sub, zmq_unbind(ping_sub, MASTER_PING));
-    SOCK_DISCONNECT_ERR_CHK(root_pub, zmq_disconnect(ping_sub, MASTER_ROOT));
+    //SOCK_DISCONNECT_ERR_CHK(root_pub, zmq_disconnect(ping_sub, MASTER_ROOT));
+    SOCK_UNBIND_ERR_CHK(root_pub, zmq_unbind(ping_sub, MASTER_ROOT));
     SOCK_CLOSE_ERR_CHK(ping_sub, zmq_close(ping_sub));
     SOCK_CLOSE_ERR_CHK(root_pub, zmq_close(root_pub));
     do {
@@ -77,43 +77,34 @@ mm_code mm_send_relax(int id, int p_id) {
 }
 
 mm_code mm_send_create(int id, int p_id) {
-
-    if (p_id == -1) {
-        /// Связаться с корнем дерева
-        //zmq_connect(root_pub, )
-    }
-    else {
-        /// Отправить команду через очередь сообещний корню дерева
-        //TODO
-    }
     return mmr_ok;
 }
 
 mm_code mm_send_remove(int id, int p_id) {
-    if (p_id == -1) {
-
-    }
-    else {
-        //TODO
-    }
     return mmr_ok;
 }
 
-mm_code mm_send_execute(mm_command* cmd, int id, int p_id) {
-    if (p_id == -1) {
-        mm_cmd sent_cmd;
-        sent_cmd.cmd = mmc_execute;
-        sent_cmd.length = sizeof(*cmd);
-        memcpy((void*)(&sent_cmd.buffer), (void*)(cmd), sizeof(*cmd));
-        zmq_msg_t zmqmsg;
-        zmq_msg_init_size(&zmqmsg, sizeof sent_cmd);
-        memcpy(zmq_msg_data(&zmqmsg), &sent_cmd, sizeof sent_cmd);
-        int send = zmq_msg_send(&zmqmsg, root_pub, 0);
-        zmq_msg_close(&zmqmsg);
-    }
-    else {
-        //TODO
-    }
+mm_code mm_send_execute(mm_command* cmd, int id) {
+    mm_cmd sent_cmd;
+    sent_cmd.id = id;
+    sent_cmd.cmd = mmc_execute;
+    sent_cmd.length = sizeof(*cmd);
+    sent_cmd.buffer.pattern_len = cmd->pattern_len;
+    sent_cmd.buffer.text_len = cmd->text_len;
+    memcpy(sent_cmd.buffer.pattern, cmd->pattern, CMD_MAX_BUF_SIZE);
+    memcpy(sent_cmd.buffer.text, cmd->text, CMD_MAX_BUF_SIZE);
+
+    zmq_msg_t zmqmsg;
+    zmq_msg_init_size(&zmqmsg, sizeof(mm_cmd));
+    memcpy(zmq_msg_data(&zmqmsg), &sent_cmd, sizeof(mm_cmd));
+
+    mm_cmd* test = zmq_msg_data(&zmqmsg);
+    // LOG(LL_DEBUG, "TEST: id:%d len:%d, cmd:%d, {%d,%d,%s,%s}",
+    //     test->id, test->length, test->cmd, test->buffer.pattern_len,
+    //     test->buffer.text_len, test->buffer.pattern, test->buffer.text);
+
+    int send = zmq_msg_send(&zmqmsg, root_pub, 0);
+    zmq_msg_close(&zmqmsg);
 
     return mmr_ok;
 }
@@ -128,7 +119,7 @@ mm_code mm_send_pingall(int root_id, int* alive, int* len) {
         zmq_msg_send(&zmqmsg, root_pub, 0);
         zmq_msg_close(&zmqmsg);
     }
-    sleep(1);
+    //sleep(1);
     int p = 0;
     do {
         zmq_msg_t zmqmsg;

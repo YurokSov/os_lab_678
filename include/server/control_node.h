@@ -33,4 +33,6 @@ execute_status execute_cmd(cmd_enum* cmd, command_u* cmd_info, void** result);
 
 void kill_childs();
 
+void kill_child(int pid);
+
 #endif

@@ -10,6 +10,7 @@ typedef enum mm_code {
 #define CMD_MAX_BUF_SIZE 256
 
 typedef struct mm_command {
+    int temp_id;
     int pattern_len;
     int text_len;
     char pattern[CMD_MAX_BUF_SIZE];
@@ -17,7 +18,7 @@ typedef struct mm_command {
 } mm_command;
 
 typedef enum mm_ecmd {
-    mmc_create, mmc_remove, mmc_execute, mmc_pingall,
+    mmc_rebind, mmc_relax, mmc_execute, mmc_pingall,
 } mm_ecmd;
 
 typedef struct mm_cmd {
