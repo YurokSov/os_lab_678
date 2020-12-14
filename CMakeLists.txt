@@ -12,6 +12,8 @@ link_libraries(rt)
 
 add_definitions("-g3")
 
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
 include_directories(${PROJECT_SOURCE_DIR}/include)
 file(GLOB_RECURSE  SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.c ${PROJECT_SOURCE_DIR}/src/*.cpp)
 
