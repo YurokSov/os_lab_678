@@ -7,19 +7,31 @@ typedef enum mm_code {
     mmr_ok, mmr_error, mmr_bad_params,
 } mm_code;
 
+#define CMD_MAX_BUF_SIZE 256
+
 typedef struct mm_command {
     int pattern_len;
     int text_len;
-    char* pattern;
-    char* text;
+    char pattern[CMD_MAX_BUF_SIZE];
+    char text[CMD_MAX_BUF_SIZE];
 } mm_command;
+
+typedef enum mm_ecmd {
+    mmc_create, mmc_remove, mmc_execute, mmc_pingall,
+} mm_ecmd;
+
+typedef struct mm_cmd {
+    mm_ecmd cmd;
+    int length;
+    void* buffer;
+} mm_cmd;
 
 typedef void* zctx_t;
 typedef void* zsock_t;
 
-#define MASTER_ROOT "ipc://@lab/control-root"
+#define MASTER_ROOT "ipc://@lab/-1"
 
-#define MASTER_PING "ipc://@lab/control-ping"
+#define MASTER_PING "ipc://@lab/ping"
 
 #define SLAVE_PREFIX "ipc://@lab/"
 

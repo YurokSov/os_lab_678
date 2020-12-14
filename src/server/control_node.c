@@ -1,3 +1,4 @@
+#include "core/message_manager.h"
 #include "server/control_node.h"
 #include "server/mm_control_node.h"
 #include "client/computing_node.h"
@@ -8,6 +9,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "utils/avl_c_externs.h"
 
@@ -26,15 +28,6 @@ bool deinit_control_node() {
     return deinit_avl(tree_ptr) && (mm_deinit_control_node() == mmr_ok);
 }
 
-void create_add_hook(create_cmd* cmd_info, int fork_res) {
-    ntable[ntable_size].is_alive = true;
-    ntable[ntable_size].info.pid = fork_res;
-    ntable[ntable_size].info.ppid = getpid();
-    ntable[ntable_size].info.id = cmd_info->id;
-    ntable[ntable_size].info.p_id = get_parent_id(tree_ptr, cmd_info->id);
-    ntable_size++;
-}
-
 execute_status execute_create(create_cmd* cmd_info, void** result) {
     execute_status status = es_ok;
     bool found = false;
@@ -47,14 +40,23 @@ execute_status execute_create(create_cmd* cmd_info, void** result) {
         }
     }
     if (!found) {
+
+        if (!add_to_tree(tree_ptr, cmd_info->id)) {
+            LOG(LL_FATAL, "bad tree insert!");
+            exit(EXIT_FAILURE);
+        }
+        ntable[ntable_size].is_alive = true;
+        ntable[ntable_size].info.id = cmd_info->id;
+        ntable[ntable_size].info.p_id = get_parent_id(tree_ptr, cmd_info->id);
+        ntable_size++;
+
         __pid_t fork_res = fork();
         if (fork_res > 0) {
             LOG(LL_NOTE, "In Parent, created child with id: %d", cmd_info->id);
-            if (!add_to_tree(tree_ptr, cmd_info->id)) {
-                LOG(LL_FATAL, "bad tree insert!");
-                exit(EXIT_FAILURE);
-            }
-            create_add_hook(cmd_info, fork_res);
+
+            ntable[ntable_size - 1].info.pid = fork_res;
+            ntable[ntable_size - 1].info.ppid = getpid();
+
             if (mm_send_create(ntable[ntable_size - 1].info.id, ntable[ntable_size - 1].info.p_id) != mmr_ok) {
                 status = es_msgq_error;
                 printf("Error, couldn\'t link with node!\n");
@@ -102,6 +104,7 @@ execute_status execute_remove(remove_cmd* cmd_info, void** result) {
             status = es_msgq_error;
             printf("Error: Node is unavailable\n");
         }
+        ntable[index].is_alive = false;
     }
     return status;
 }
@@ -117,8 +120,12 @@ execute_status execute_exec(exec_cmd* cmd_info, void** result) {
         }
     }
     if (found) {
-        mm_command cmd = { cmd_info->pattern_len, cmd_info->text_len, cmd_info->pattern, cmd_info->text };
-        if (mm_send_execute(cmd, ntable[index].info.id, ntable[index].info.p_id) != mmr_ok)
+        mm_command cmd;
+        cmd.pattern_len = cmd_info->pattern_len;
+        cmd.text_len = cmd_info->text_len;
+        strncpy(cmd.pattern, cmd_info->pattern, 256);
+        strncpy(cmd.text, cmd_info->text, 256);
+        if (mm_send_execute(&cmd, ntable[index].info.id, ntable[index].info.p_id) != mmr_ok)
             status = es_msgq_error;
     }
     else {

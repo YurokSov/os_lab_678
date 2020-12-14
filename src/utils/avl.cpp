@@ -11,6 +11,8 @@ int32_t avl_tree::get_parent_pid(int32_t pid) {
 // получить pid родителя - конец
 
 int32_t avl_tree::get_root_pid() {
+    if (this->_root == nullptr)
+        return -1;
     return this->_root->pid;
 }
 

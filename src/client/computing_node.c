@@ -10,6 +10,7 @@
 static node_status status;
 
 static int this_id;
+static int this_p_id;
 
 static void catch_sigterm(int signo) {
     LOG(LL_NOTE, "IN CHILD, KILLED");
@@ -19,15 +20,21 @@ static void catch_sigterm(int signo) {
 }
 
 node_status node_loop() {
+    int i = 0;
     while (true) {
-        LOG(LL_DEBUG, "IN CHILD, AILVE");
-        sleep(10);
+        if (i == 10) {
+            LOG(LL_DEBUG, "IN CHILD, AILVE");
+            i = 0;
+        }
+        mm_recv_command(this_id, this_p_id);
+        sleep(1);
+        ++i;
     }
 }
 
 node_status node_start(int id, int p_id) {
     this_id = id;
-
+    this_p_id = p_id;
     // if (!_LOG_INIT())
     //    printf("log init error in pid:%d", getpid());
     if (signal(SIGTERM, catch_sigterm) == SIG_ERR) {
