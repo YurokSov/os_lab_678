@@ -23,7 +23,7 @@ typedef enum mm_ecmd {
 typedef struct mm_cmd {
     mm_ecmd cmd;
     int length;
-    void* buffer;
+    char buffer[sizeof(mm_command)];
 } mm_cmd;
 
 typedef void* zctx_t;

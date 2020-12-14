@@ -35,7 +35,7 @@ mm_code mm_init_control_node() {
 
 mm_code mm_deinit_control_node() {
     SOCK_UNBIND_ERR_CHK(ping_sub, zmq_unbind(ping_sub, MASTER_PING));
-    SOCK_UNBIND_ERR_CHK(root_pub, zmq_unbind(ping_sub, MASTER_ROOT));
+    SOCK_DISCONNECT_ERR_CHK(root_pub, zmq_disconnect(ping_sub, MASTER_ROOT));
     SOCK_CLOSE_ERR_CHK(ping_sub, zmq_close(ping_sub));
     SOCK_CLOSE_ERR_CHK(root_pub, zmq_close(root_pub));
     CTX_TERM_ERR_CHK(zmq_ctx_term(context));
@@ -99,8 +99,7 @@ mm_code mm_send_execute(mm_command* cmd, int id, int p_id) {
         mm_cmd sent_cmd;
         sent_cmd.cmd = mmc_execute;
         sent_cmd.length = sizeof(*cmd);
-        sent_cmd.buffer = malloc(sent_cmd.length);
-        memcpy(sent_cmd.buffer, (void*)(cmd), sizeof cmd);
+        memcpy(sent_cmd.buffer, (void*)(cmd), sizeof(*cmd));
 
         zmq_msg_t zmqMessage;
         zmq_msg_init_size(&zmqMessage, sizeof sent_cmd);
@@ -110,7 +109,6 @@ mm_code mm_send_execute(mm_command* cmd, int id, int p_id) {
         int send = zmq_msg_send(&zmqMessage, root_pub, 0);
         LOG(LL_DEBUG, "SENT!!");
         zmq_msg_close(&zmqMessage);
-        free(sent_cmd.buffer);
     }
     else {
         //TODO
