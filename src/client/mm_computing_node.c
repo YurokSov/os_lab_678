@@ -141,12 +141,12 @@ mm_code mm_pass_relax() {
     }
     {
         LOG(LL_DEBUG, "RELAX TEMP_ID IN NODE %d FROM %d TO %d", this_id, temp_id);
-        SOCK_DISCONNECT_CHK_ERR(psock_s, zmq_disconnect(psock_s, parent_endpoint));
+        SOCK_DISCONNECT_ERR_CHK(psock_s, zmq_disconnect(psock_s, parent_endpoint));
         if (this_id < this_p_id)
-            snprintf(parent_endpoint + sizeof SLAVE_PREFIX - 1, "%d-left", temp_id);
+            snprintf(parent_endpoint + sizeof SLAVE_PREFIX - 1, SOCK_BUF_LEN, "%d-left", temp_id);
         else
-            snprintf(parent_endpoint + sizeof SLAVE_PREFIX - 1, "%d-right", temp_id);
-        SOCK_CONNECT_CHK_ERR(psock_s, zmq_connect(psock_s, parent_endpoint));
+            snprintf(parent_endpoint + sizeof SLAVE_PREFIX - 1, SOCK_BUF_LEN, "%d-right", temp_id);
+        SOCK_CONNECT_ERR_CHK(psock_s, zmq_connect(psock_s, parent_endpoint));
         LOG(LL_DEBUG, "Node %d psock_s connected to %s", this_id, parent_endpoint);
     }
 }
@@ -237,19 +237,19 @@ void mm_recv_command() {
     switch (cmd) {
     case mmc_rebind:
         LOG(LL_DEBUG, "Node %d Recieved REBIND!", this_id);
-        mm_pass_rebind(this_id, id, &buffer);
+        mm_pass_rebind(id, &buffer);
         break;
     case mmc_relax:
         LOG(LL_DEBUG, "Node %d Recieved RELAX!", this_id);
-        mm_pass_relax(this_id);
+        mm_pass_relax();
         break;
     case mmc_execute:
         LOG(LL_DEBUG, "Node %d Recieved EXEC!", this_id);
-        mm_pass_execute(this_id, id, &buffer);
+        mm_pass_execute(id, &buffer);
         break;
     case mmc_pingall:
         LOG(LL_DEBUG, "Node %d Recieved PINGALL!", this_id);
-        mm_pass_pingall(this_id);
+        mm_pass_pingall();
         break;
     default:
         LOG(LL_WARNING, "Node %d Recieved UNSUPPORTED MESSAGE: %d", this_id, cmd);

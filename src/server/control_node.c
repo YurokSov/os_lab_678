@@ -122,11 +122,11 @@ execute_status execute_exec(exec_cmd* cmd_info, void** result) {
 
 execute_status execute_pingall(pingall_cmd* cmd_info, void** result) {
     execute_status status = es_ok;
-    int root_id = get_root_id(tree_ptr);
+    int root_id = get_root_pid(tree_ptr);
     if (root_id != -1) {
         int* alive = malloc(sizeof(int) * MAX_NODES);
         int len = 0;
-        if (mm_send_pingall(get_root_id(tree_ptr), alive, &len) != mmr_ok) {
+        if (mm_send_pingall(root_id, alive, &len) != mmr_ok) {
             status = es_msgq_error;
         }
         printf("Ok:");

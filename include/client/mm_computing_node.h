@@ -11,7 +11,7 @@ mm_code mm_deinit_computing_node();
 
 mm_code mm_pass_rebind(int id, mm_command* msg);
 
-mm_code mm_pass_relax(int id);
+mm_code mm_pass_relax();
 
 //mm_code mm_pass_create(int this_id, int this_p_id, int id, int p_id);
 
