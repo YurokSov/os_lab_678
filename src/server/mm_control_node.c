@@ -27,7 +27,6 @@ mm_code mm_init_control_node() {
     LOG(LL_DEBUG, "root_ping sub bound ON %s", MASTER_PING);
     root_pub = zmq_socket(context, ZMQ_PUB);
     SOCK_CREAT_ERR_CHK(root_pub);
-    //SOCK_CONNECT_ERR_CHK(root_pub, zmq_connect(root_pub, MASTER_ROOT));
     SOCK_BIND_ERR_CHK(root_pub, zmq_bind(root_pub, MASTER_ROOT));
     LOG(LL_DEBUG, "root_pub bound on %s", MASTER_ROOT);
     return mmr_ok;
@@ -35,7 +34,6 @@ mm_code mm_init_control_node() {
 
 mm_code mm_deinit_control_node() {
     SOCK_UNBIND_ERR_CHK(ping_sub, zmq_unbind(ping_sub, MASTER_PING));
-    //SOCK_DISCONNECT_ERR_CHK(root_pub, zmq_disconnect(ping_sub, MASTER_ROOT));
     SOCK_UNBIND_ERR_CHK(root_pub, zmq_unbind(ping_sub, MASTER_ROOT));
     SOCK_CLOSE_ERR_CHK(ping_sub, zmq_close(ping_sub));
     SOCK_CLOSE_ERR_CHK(root_pub, zmq_close(root_pub));
@@ -49,29 +47,12 @@ mm_code mm_deinit_control_node() {
     return mmr_ok;
 }
 
-// mm_code mm_subscribe_control_node(int id) {
-//     mm_code status = mmr_ok;
-//     char buffer[SOCK_BUF_LEN] = SOCK_PREFIX;
-//     if (id < 0 || snprintf(buffer + sizeof SOCK_PREFIX, SOCK_BUF_LEN, "%d", id)) {
-//         LOG(LL_ERROR, "Bad ID provided!");
-//     }
-//     zmq_connect(ping_sub, buffer);
-//     return status;
-// }
-
-// mm_code mm_unsubscribe_control_node(int id) {
-//     mm_code status = mmr_ok;
-
-//     return status;
-// }
-
-
-mm_code mm_send_rebind(int id, int p_id) {
+mm_code mm_send_rebind(int id, int target_id) {
     //TODO
     return mmr_ok;
 }
 
-mm_code mm_send_relax(int id, int p_id) {
+mm_code mm_send_relax() {
     //TODO
     return mmr_ok;
 }

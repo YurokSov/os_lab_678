@@ -1,5 +1,9 @@
 #include "utils/avl.hpp"
 
+extern "C" {
+#include "server/mm_control_node.h"
+}
+
 // получить pid корня - начало
 int32_t avl_tree::get_root_pid() {
     if (_root == nullptr) {
@@ -57,8 +61,10 @@ void avl_tree::_left_rotate(std::shared_ptr<tree_node> node) {
     }
     node->right = right_son->left; // перевешиваем a->b на a->q
     if (right_son->left != nullptr) {
+        mm_send_rebind(right_son->left->pid, node->pid);
         right_son->left->parent = node; // связываем q->a 
     }
+    mm_send_rebind(right_son->pid, node->parent.lock()->pid);
     right_son->parent = node->parent; // связываем b->p
     if (node == _root) {
         _root = right_son;
@@ -70,6 +76,7 @@ void avl_tree::_left_rotate(std::shared_ptr<tree_node> node) {
         node->parent.lock()->right = right_son;
     }
     right_son->left = node; // перевешиваем b->q на b->a
+    mm_send_rebind(node->pid, right_son->pid);
     node->parent = right_son; // связываем a->b
 
     node->balance++;
@@ -94,8 +101,10 @@ void avl_tree::_right_rotate(std::shared_ptr<tree_node> node) {
     }
     node->left = left_son->right; // перевешиваем b->a на b->q
     if (left_son->right != nullptr) {
+        mm_send_rebind(left_son->right->pid, node->pid);
         left_son->right->parent = node; // связываем q->b
     }
+    mm_send_rebind(left_son->pid, node->parent.lock()->pid);
     left_son->parent = node->parent; // связываем a->p
     if (node == _root) {
         _root = left_son;
@@ -107,6 +116,7 @@ void avl_tree::_right_rotate(std::shared_ptr<tree_node> node) {
         node->parent.lock()->left = left_son;
     }
     left_son->right = node; // перевешиваем a->q на a->b
+    mm_send_rebind(node->pid, left_son->pid);
     node->parent = left_son; // связываем b->a
 
     node->balance--;
@@ -148,7 +158,9 @@ bool avl_tree::insert(int32_t pid) {
         return true;
     }
     else {
-        return _insert(pid, _root);
+        int ret = _insert(pid, _root);
+        mm_send_relax();
+        return ret;
     }
 }
 
@@ -302,6 +314,7 @@ bool avl_tree::remove(int32_t pid) {
         return false;
     }
     _remove(node);
+    mm_send_relax();
     return true;
 }
 
@@ -313,6 +326,7 @@ void avl_tree::_remove(std::shared_ptr<tree_node> node) {
     if (node->left == nullptr) {
         to_replace = node->right;
         if (to_replace != nullptr) {
+            mm_send_rebind(to_replace->pid, node->parent.lock()->pid);
             to_replace->parent = node->parent; // (!!!!!!!) связываение to_replace->node.parent
             to_replace_parent = node->parent.lock();
         }
@@ -339,6 +353,7 @@ void avl_tree::_remove(std::shared_ptr<tree_node> node) {
     }
     else if (node->right == nullptr) {
         to_replace = node->left;
+        mm_send_rebind(to_replace->pid, node->parent.lock()->pid);
         to_replace->parent = node->parent; // (!!!!!!) связывание to_replace->node.parent
         to_replace_parent = node->parent.lock();
         if (node != _root) {
@@ -363,6 +378,7 @@ void avl_tree::_remove(std::shared_ptr<tree_node> node) {
         to_replace = to_delete->right;
         if (to_delete->parent.lock() == node) {
             if (to_replace != nullptr) {
+                mm_send_rebind(to_replace->pid, to_delete->pid);
                 to_replace->parent = to_delete; // (!!!!!!!!!) связывание to_replace->to_delete
             }
             to_replace_parent = to_delete;
@@ -370,10 +386,12 @@ void avl_tree::_remove(std::shared_ptr<tree_node> node) {
         else {
             to_delete->parent.lock()->left = to_replace;
             if (to_replace != nullptr) {
+                mm_send_rebind(to_replace->pid, to_delete->parent.lock()->pid);
                 to_replace->parent = to_delete->parent;  // (!!!!!!!!!) связывание to_replace->to_delete.parent
             }
             to_replace_parent = to_delete->parent.lock();
             to_delete->right = node->right;
+            mm_send_rebind(to_delete->right->pid, to_delete->pid);
             to_delete->right->parent = to_delete; // (!!!!!!!!!) связывание to_delete.right->to_delete
         }
         if (node != _root) {
@@ -387,8 +405,10 @@ void avl_tree::_remove(std::shared_ptr<tree_node> node) {
         else {
             _root = to_delete;
         }
+        mm_send_rebind(to_delete->pid, node->parent.lock()->pid);
         to_delete->parent = node->parent; // (!!!!!!!!!) связывание to_delete -> node.parent
         to_delete->left = node->left;
+        mm_send_rebind(to_delete->left->pid, to_delete->pid);
         to_delete->left->parent = to_delete; // (!!!!!!!!!) связывание to_delete.left -> to_delete
         to_delete->balance = node->balance;
     }

@@ -7,9 +7,9 @@ mm_code mm_init_control_node();
 
 mm_code mm_deinit_control_node();
 
-mm_code mm_send_rebind(int id, int p_id);
+mm_code mm_send_rebind(int id, int target_id);
 
-mm_code mm_send_relax(int id, int p_id);
+mm_code mm_send_relax();
 
 mm_code mm_send_create(int id, int p_id);
 
