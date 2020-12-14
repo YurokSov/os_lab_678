@@ -1,4 +1,4 @@
-#include "utils/avl_wrapper.hpp"
+#include "avl_wrapper.hpp"
 
 #define MAX_PATH_LEN 48
 
@@ -26,12 +26,19 @@ int get_parent_id(avl_tree* tree, int id) {
     return tree->get_parent_pid(id);
 }
 
-int get_root_id(avl_tree* tree) {
-    return tree->get_root_pid();
+bool get_path(avl_tree* tree, int id, int* path_len, int* path) {
+    if (!tree->search(id, buffer, path_len)) {
+        *path_len = -1;
+        return false;
+    }
+    path = buffer;
+    return true;
 }
 
-int* get_path(avl_tree* tree, int id, int* path_len) {
-    if (!tree->search(id, buffer, path_len))
-        *path_len = -1;
-    return buffer;
+void print_tree(struct avl_tree* tree) {
+    tree->print();
+}
+
+int get_root_pid(avl_tree* tree) {
+    return tree->get_root_pid();
 }
