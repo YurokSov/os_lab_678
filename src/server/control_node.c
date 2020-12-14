@@ -28,6 +28,14 @@ bool deinit_control_node() {
     return deinit_avl(tree_ptr) && (mm_deinit_control_node() == mmr_ok);
 }
 
+int find_free_place() {
+    for (int i = 0; i < MAX_NODES; ++i) {
+        if (ntable[i].is_alive == false || i >= ntable_size)
+            return i;
+    }
+    return -1;
+}
+
 execute_status execute_create(create_cmd* cmd_info, void** result) {
     execute_status status = es_ok;
     bool found = false;
@@ -45,19 +53,25 @@ execute_status execute_create(create_cmd* cmd_info, void** result) {
             LOG(LL_FATAL, "bad tree insert!");
             exit(EXIT_FAILURE);
         }
-        ntable[ntable_size].is_alive = true;
-        ntable[ntable_size].info.id = cmd_info->id;
-        ntable[ntable_size].info.p_id = get_parent_id(tree_ptr, cmd_info->id);
-        ntable_size++;
+        int place = find_free_place();
+        if (place == -1) {
+            LOG(LL_FATAL, "CANT INSERT NEW NODE: NO FREE SPACE!");
+            return es_runtime;
+        }
+        ntable[place].is_alive = true;
+        ntable[place].info.id = cmd_info->id;
+        ntable[place].info.p_id = get_parent_id(tree_ptr, cmd_info->id);
+        if (place == ntable_size)
+            ntable_size++;
 
         __pid_t fork_res = fork();
         if (fork_res > 0) {
             LOG(LL_NOTE, "In Parent, created child with id: %d", cmd_info->id);
 
-            ntable[ntable_size - 1].info.pid = fork_res;
-            ntable[ntable_size - 1].info.ppid = getpid();
+            ntable[place - 1].info.pid = fork_res;
+            ntable[place - 1].info.ppid = getpid();
 
-            if (mm_send_create(ntable[ntable_size - 1].info.id, ntable[ntable_size - 1].info.p_id) != mmr_ok) {
+            if (mm_send_create(ntable[place - 1].info.id, ntable[place - 1].info.p_id) != mmr_ok) {
                 status = es_msgq_error;
                 printf("Error, couldn\'t link with node!\n");
             }
@@ -66,7 +80,7 @@ execute_status execute_create(create_cmd* cmd_info, void** result) {
             }
         }
         else if (fork_res == 0) {
-            if (node_start(ntable[ntable_size - 1].info.id, ntable[ntable_size - 1].info.p_id) != ns_ok)
+            if (node_start(ntable[place - 1].info.id, ntable[place - 1].info.p_id) != ns_ok)
                 exit(EXIT_FAILURE);
             exit(EXIT_SUCCESS);
         }
@@ -125,11 +139,14 @@ execute_status execute_exec(exec_cmd* cmd_info, void** result) {
         cmd.text_len = cmd_info->text_len;
         strncpy(cmd.pattern, cmd_info->pattern, 256);
         strncpy(cmd.text, cmd_info->text, 256);
-        if (mm_send_execute(&cmd, ntable[index].info.id, ntable[index].info.p_id) != mmr_ok)
+        if (mm_send_execute(&cmd, ntable[index].info.id, ntable[index].info.p_id) != mmr_ok) {
             status = es_msgq_error;
+            printf("Error: node unavailable!\n");
+        }
     }
     else {
         status = es_bad_params;
+        printf("Error: no such node!\n");
     }
     return status;
 }
@@ -138,21 +155,34 @@ execute_status execute_pingall(pingall_cmd* cmd_info, void** result) {
     execute_status status = es_ok;
     int root_id = get_root_id(tree_ptr);
     if (root_id != -1) {
-        if (mm_send_pingall(get_root_id(tree_ptr)) != mmr_ok)
+        int* alive = malloc(sizeof(int) * MAX_NODES);
+        int len = 0;
+        if (mm_send_pingall(get_root_id(tree_ptr), alive, &len) != mmr_ok) {
             status = es_msgq_error;
+        }
+        printf("Ok:");
+        for (int i = 0; i < ntable_size; ++i) {
+            bool is_alive = false;
+            for (int j = 0; j < len; ++j) {
+                if (ntable[i].info.id == alive[j]) {
+                    ntable[i].is_alive = true;
+                    is_alive = true;
+                }
+            }
+            if (!is_alive) {
+                ntable[i].is_alive = false;
+                if (!remove_from_tree(tree_ptr, ntable[i].info.id))
+                    LOG(LL_ERROR, "REMOVE %d from tree ERROR!");
+                else {
+                    printf("%d;", i);
+                }
+            }
+        }
+        printf("\n");
     }
     else {
         LOG(LL_NOTE, "Nothing to ping...");
     }
-    // for (int i = 0; i < ntable_size; ++i) {
-    //     if (ntable[i].is_alive) {
-    //         int path_len;
-    //         int* path = get_path(tree_ptr, ntable[i].info.id, &path_len);
-    //         if (mm_send_ping(path, path_len) != mmr_ok) {
-    //             status = es_msgq_error;
-    //         }
-    //     }
-    // }
     return status;
 }
 

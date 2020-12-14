@@ -23,13 +23,16 @@ typedef enum mm_ecmd {
 typedef struct mm_cmd {
     mm_ecmd cmd;
     int length;
-    char buffer[sizeof(mm_command)];
+    int id;
+    int p_id;
+    mm_command buffer;
+    //char buffer[sizeof(mm_command)];
 } mm_cmd;
 
 typedef void* zctx_t;
 typedef void* zsock_t;
 
-#define MASTER_ROOT "ipc://@lab/-1"
+#define MASTER_ROOT "ipc://@lab/-1-right"
 
 #define MASTER_PING "ipc://@lab/ping"
 
@@ -41,63 +44,54 @@ typedef void* zsock_t;
     if (context == NULL) { \
         LOG(LL_FATAL, "couldn\'t create zmq_context! errno: %d", errno); \
         perror("zmq_ctx_new "); \
-        return mmr_error; \
     } \
 
 #define CTX_TERM_ERR_CHK(result) \
     if (context) { \
         LOG(LL_FATAL, "couldn\'t terminate zmq_context! errno: %d", errno); \
         perror("zmq_ctx_term "); \
-        return mmr_error; \
     } \
 
 #define SOCK_CREAT_ERR_CHK(socket) \
     if (socket == NULL) { \
         LOG(LL_FATAL, "couldn\'t create " xstr(socket) " socket! errno: %d", errno); \
         perror("zmq_socket "); \
-        return mmr_error; \
     } \
 
 #define SOCK_CLOSE_ERR_CHK(socket, result) \
     if (result) { \
         LOG(LL_FATAL, "couldn\'t close " xstr(socket) " socket! errno: %d", errno); \
         perror("zmq_close "); \
-        return mmr_error; \
     } \
 
 #define SETSOCKOPT_ERR_CHK(socket, result) \
     if (result) { \
         LOG(LL_FATAL, "couldn\'t set " xstr(socket) " options! errno: %d", errno); \
         perror("zmq_setsockopt "); \
-        return mmr_error; \
     } \
 
 #define SOCK_BIND_ERR_CHK(socket, result) \
     if (result) { \
         LOG(LL_FATAL, xstr(socket) " bind error! errno: %d", errno); \
         perror("zmq_bind "); \
-        return mmr_error; \
     } \
 
 #define SOCK_UNBIND_ERR_CHK(socket, result) \
     if (result) { \
         LOG(LL_FATAL, xstr(socket) " unbind error! errno: %d", errno); \
         perror("zmq_unbind "); \
-        return mmr_error; \
     } \
 
 #define SOCK_CONNECT_ERR_CHK(socket, result) \
     if (result) { \
         LOG(LL_FATAL, xstr(socket) " connect error! errno: %d", errno); \
         perror("zmq_connect "); \
-        return mmr_error; \
     } \
 
 #define SOCK_DISCONNECT_ERR_CHK(socket, result) \
     if (result) { \
         LOG(LL_FATAL, xstr(socket) " disconnect error! errno: %d", errno); \
         perror("zmq_disconnect "); \
-        return mmr_error; \
     } \
 
 #endif

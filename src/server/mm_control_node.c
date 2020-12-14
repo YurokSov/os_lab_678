@@ -13,8 +13,8 @@ static zsock_t root_pub;
 
 #define ROUTE "ipc://@lab/0"
 
-static int recv_timeout_ms = 100;
-static int node_connect_timeout_ms = 100;
+static int recv_timeout_ms = 1000;
+static int node_connect_timeout_ms = 1000;
 
 mm_code mm_init_control_node() {
     context = zmq_ctx_new();
@@ -26,10 +26,11 @@ mm_code mm_init_control_node() {
     SETSOCKOPT_ERR_CHK(ping_sub, zmq_setsockopt(ping_sub, ZMQ_RCVTIMEO, &recv_timeout_ms, sizeof recv_timeout_ms));
     SETSOCKOPT_ERR_CHK(ping_sub, zmq_setsockopt(ping_sub, ZMQ_CONNECT_TIMEOUT, &node_connect_timeout_ms, sizeof node_connect_timeout_ms));
     SOCK_BIND_ERR_CHK(ping_sub, zmq_bind(ping_sub, MASTER_PING));
+    //LOG(LL_DEBUG, "MASTER PING SUB BIND ON %s", MASTER_PING);
     root_pub = zmq_socket(context, ZMQ_PUB);
     SOCK_CREAT_ERR_CHK(root_pub);
     SOCK_CONNECT_ERR_CHK(root_pub, zmq_connect(root_pub, MASTER_ROOT));
-    LOG(LL_DEBUG, "root_pub binded on %s", MASTER_ROOT);
+    //LOG(LL_DEBUG, "root_pub connected on %s", MASTER_ROOT);
     return mmr_ok;
 }
 
@@ -38,7 +39,13 @@ mm_code mm_deinit_control_node() {
     SOCK_DISCONNECT_ERR_CHK(root_pub, zmq_disconnect(ping_sub, MASTER_ROOT));
     SOCK_CLOSE_ERR_CHK(ping_sub, zmq_close(ping_sub));
     SOCK_CLOSE_ERR_CHK(root_pub, zmq_close(root_pub));
-    CTX_TERM_ERR_CHK(zmq_ctx_term(context));
+    do {
+        if (!zmq_ctx_term(context))
+            break;
+        LOG(LL_FATAL, "couldn\'t terminate zmq_context! errno: %d", errno);
+        perror("zmq_ctx_term ");
+        sleep(5);
+    } while (errno == EAGAIN);
     return mmr_ok;
 }
 
@@ -94,21 +101,15 @@ mm_code mm_send_remove(int id, int p_id) {
 
 mm_code mm_send_execute(mm_command* cmd, int id, int p_id) {
     if (p_id == -1) {
-
-
         mm_cmd sent_cmd;
         sent_cmd.cmd = mmc_execute;
         sent_cmd.length = sizeof(*cmd);
-        memcpy(sent_cmd.buffer, (void*)(cmd), sizeof(*cmd));
-
-        zmq_msg_t zmqMessage;
-        zmq_msg_init_size(&zmqMessage, sizeof sent_cmd);
-        memcpy(zmq_msg_data(&zmqMessage), &sent_cmd, sizeof sent_cmd);
-
-        LOG(LL_DEBUG, "SENDING!!!");
-        int send = zmq_msg_send(&zmqMessage, root_pub, 0);
-        LOG(LL_DEBUG, "SENT!!");
-        zmq_msg_close(&zmqMessage);
+        memcpy((void*)(&sent_cmd.buffer), (void*)(cmd), sizeof(*cmd));
+        zmq_msg_t zmqmsg;
+        zmq_msg_init_size(&zmqmsg, sizeof sent_cmd);
+        memcpy(zmq_msg_data(&zmqmsg), &sent_cmd, sizeof sent_cmd);
+        int send = zmq_msg_send(&zmqmsg, root_pub, 0);
+        zmq_msg_close(&zmqmsg);
     }
     else {
         //TODO
@@ -117,8 +118,34 @@ mm_code mm_send_execute(mm_command* cmd, int id, int p_id) {
     return mmr_ok;
 }
 
-mm_code mm_send_pingall(int root_id) {
-    //TODO
+mm_code mm_send_pingall(int root_id, int* alive, int* len) {
     LOG(LL_NOTE, "Sending pingall to root node with id = %d.", root_id);
+    {
+        zmq_msg_t zmqmsg;
+        zmq_msg_init_size(&zmqmsg, sizeof(mm_ecmd));
+        mm_ecmd* data = zmq_msg_data(&zmqmsg);
+        *data = mmc_pingall;
+        zmq_msg_send(&zmqmsg, root_pub, 0);
+        zmq_msg_close(&zmqmsg);
+    }
+    sleep(1);
+    int p = 0;
+    do {
+        zmq_msg_t zmqmsg;
+        zmq_msg_init(&zmqmsg);
+        if (zmq_msg_recv(&zmqmsg, ping_sub, 0) == -1) {
+            if (errno == EAGAIN) {
+                LOG(LL_DEBUG, "NO MORE ALIVE NODES!!");
+                zmq_msg_close(&zmqmsg);
+                break;
+            }
+        }
+        int id = *((int*)zmq_msg_data(&zmqmsg));
+        alive[p] = id;
+        p++;
+        LOG(LL_NOTE, "NODE WITH ID %d IS ALIVE!", id);
+        zmq_msg_close(&zmqmsg);
+    } while (true);
+    *len = p;
     return mmr_ok;
 }

@@ -17,6 +17,6 @@ mm_code mm_send_remove(int id, int p_id);
 
 mm_code mm_send_execute(mm_command* cmd, int id, int p_id);
 
-mm_code mm_send_pingall(int root_id);
+mm_code mm_send_pingall(int root_id, int* alive, int* len);
 
 #endif
