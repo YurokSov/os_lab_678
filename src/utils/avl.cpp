@@ -273,7 +273,7 @@ void avl_tree::_print(const std::string& prefix, std::shared_ptr<tree_node> node
 
 // удаление поддерева - начало
 bool avl_tree::delete_sub_tree(int32_t* pids, int32_t len) {
-    std::shared_ptr<tree_node> old_root = _root;
+
     for (int32_t i = 0; i < len; ++i) {
         int32_t pid = pids[i];
         std::shared_ptr<tree_node> to_delete = _find(pid, _root);
@@ -283,11 +283,11 @@ bool avl_tree::delete_sub_tree(int32_t* pids, int32_t len) {
         }
         if (to_delete == _root) {
             _root = nullptr;
-            continue;
         }
         _delete_sub_tree(to_delete);
     }
-    _reconstruct(old_root);
+    if (_root != nullptr)
+        _reconstruct();
     return true;
 }
 
@@ -324,7 +324,8 @@ void avl_tree::_delete_sub_tree(std::shared_ptr<tree_node> node) {
     }
 }
 
-void avl_tree::_reconstruct(std::shared_ptr<tree_node> old_root) {
+void avl_tree::_reconstruct() {
+    std::shared_ptr<tree_node> old_root = _root;
     _root = std::shared_ptr<tree_node>(new tree_node(old_root->pid));
     _rec_reconstruct(_root, old_root->left);
     _rec_reconstruct(_root, old_root->right);

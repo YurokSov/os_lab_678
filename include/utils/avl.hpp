@@ -47,7 +47,7 @@ private:
     // рекурсивно перестраиваем дерево после удаления целого поддерева
     void _rec_reconstruct(std::shared_ptr<tree_node>& new_root, std::shared_ptr<tree_node> node);
     // функция, вызывающая _rec_reconstruct, она обновляет корень
-    void _reconstruct(std::shared_ptr<tree_node> old_root);
+    void _reconstruct();
     // рекурсивное обновление баланса для вставки
     void _go_up_insert(std::shared_ptr<tree_node> node, std::shared_ptr<tree_node> prev);
     // вывод дерева на экран рекурсивно
