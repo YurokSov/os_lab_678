@@ -18,7 +18,6 @@ extern "C" {
 #include "utils/avl.hpp"
 #include <iostream>
 
-
 int main_repl() {
     parse_status status = pse_ok;
     command_u cmd_info;
@@ -29,6 +28,7 @@ int main_repl() {
         get_cmd_info(&cmd, &cmd_info);
         execute_cmd(&cmd, &cmd_info, &result);
         //print_result(result);
+        //sleep(1);
     }
     kill_childs();
     return true;

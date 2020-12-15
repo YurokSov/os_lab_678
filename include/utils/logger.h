@@ -23,6 +23,7 @@
 #define LL_WARNING 2
 #define LL_ERROR 1
 #define LL_FATAL 0
+#define LL_NONE -1
 
 #ifndef UD_LOG_LEVEL
 #define UD_LOG_LEVEL LL_DEBUG

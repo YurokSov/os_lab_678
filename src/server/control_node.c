@@ -17,9 +17,27 @@ static struct avl_tree* tree_ptr;
 
 static node ntable[MAX_NODES];
 
+void sigint_handler()
+{
+    LOG(LL_FATAL, "SIGINT");
+    kill_childs();
+    deinit_control_node();
+    exit(EXIT_SUCCESS);
+}
+
+void sigsegv_handler()
+{
+    LOG(LL_FATAL, "SIGSEGV");
+    kill_childs();
+    deinit_control_node();
+    exit(EXIT_SUCCESS);
+}
+
 bool init_control_node() {
     for (int i = 0; i < MAX_NODES; ++i)
         ntable[i].is_alive = false;
+    signal(SIGINT, sigint_handler);
+    signal(SIGSEGV, sigsegv_handler);
     return init_avl(&tree_ptr) && (mm_init_control_node() == mmr_ok);
 }
 
@@ -50,13 +68,7 @@ execute_status execute_create(create_cmd* cmd_info, void** result) {
             ntable[cmd_info->id].info.pid = fork_res;
             ntable[cmd_info->id].info.ppid = getpid();
 
-            if (mm_send_create(ntable[cmd_info->id].info.id, ntable[cmd_info->id].info.p_id) != mmr_ok) {
-                status = es_msgq_error;
-                printf("Error, couldn\'t link with node!\n");
-            }
-            else {
-                printf("Ok: %d\n", fork_res);
-            }
+            printf("Ok: %d\n", fork_res);
         }
         else if (fork_res == 0) {
             if (node_start(ntable[cmd_info->id].info.id, ntable[cmd_info->id].info.p_id) != ns_ok)
@@ -76,16 +88,11 @@ execute_status execute_remove(remove_cmd* cmd_info, void** result) {
     execute_status status = es_ok;
     LOG(LL_NOTE, "Killing child with id: %d", cmd_info->id);
     if (ntable[cmd_info->id].is_alive) {
-        if (mm_send_remove(ntable[cmd_info->id].info.id, ntable[cmd_info->id].info.p_id) == mmr_ok) {
-            printf("Ok\n");
-            kill_child(ntable[cmd_info->id].info.pid);
-            if (!remove_from_tree(tree_ptr, cmd_info->id))
-                LOG(LL_ERROR, "REMOVE %d from tree ERROR!");
-        }
-        else {
-            status = es_msgq_error;
-            printf("Error: Node is unavailable\n");
-        }
+        printf("Ok\n");
+        kill_child(ntable[cmd_info->id].info.pid);
+        if (!remove_from_tree(tree_ptr, cmd_info->id))
+            LOG(LL_ERROR, "REMOVE %d from tree ERROR!");
+
         ntable[cmd_info->id].is_alive = false;
     }
     else {
@@ -163,6 +170,10 @@ execute_status execute_pingall(pingall_cmd* cmd_info, void** result) {
     return status;
 }
 
+execute_status execute_print(print_cmd* cmd_info) {
+    print_tree(tree_ptr);
+}
+
 execute_status execute_cmd(cmd_enum* cmd, command_u* cmd_info, void** result) {
     execute_status status;
 
@@ -178,6 +189,9 @@ execute_status execute_cmd(cmd_enum* cmd, command_u* cmd_info, void** result) {
         break;
     case ce_pingall:
         status = execute_pingall(&(cmd_info->pingall), result);
+        break;
+    case ce_print:
+        status = execute_print(&(cmd_info->print));
         break;
     }
     if (status == es_ok) {
@@ -227,6 +241,5 @@ void kill_childs() {
                 LOG(LL_WARNING, "Child process exited with error: %d", status);
         }
     }
-    sleep(1);
     LOG(LL_NOTE, "All child processes are exited!");
 }

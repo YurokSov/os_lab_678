@@ -12,7 +12,6 @@ static node_status status;
 static int this_id;
 static int this_p_id;
 
-
 static void catch_sigterm(int signo) {
     LOG(LL_NOTE, "IN CHILD, KILLED");
     mm_deinit_computing_node(this_id, this_p_id);
@@ -20,7 +19,6 @@ static void catch_sigterm(int signo) {
         exit(EXIT_FAILURE);
     exit(EXIT_SUCCESS);
 }
-
 
 void init() {
     if (signal(SIGTERM, catch_sigterm) == SIG_ERR) {
@@ -43,7 +41,7 @@ node_status node_loop() {
             i = 0;
         }
         mm_recv_command(this_id, this_p_id);
-        sleep(1);
+        //sleep(1)
         ++i;
     }
 }
@@ -58,5 +56,31 @@ node_status node_start(int id, int p_id) {
 }
 
 node_status execute_command(mm_command* data) {
-    printf("COMMAND EXECUTED!");
+    char* text = data->text;
+    int text_len = data->text_len;
+    char* pattern = data->pattern;
+    int pattern_len = data->pattern_len;
+    int* result = malloc(MAX_OCCURENCES * sizeof(int));
+    int i = 0;
+    int j = 0;
+    int count = 0;
+    while (i < text_len) {
+        int h = i;
+        while (h < text_len && j < pattern_len && text[h] == pattern[j]) {
+            h++;
+            j++;
+        }
+        if (j == pattern_len) {
+            result[count] = i;
+            count++;
+        }
+        j = 0;
+        i++;
+    }
+    printf("Ok:%d:", this_id);
+    for (int i = 0; i < count; ++i) {
+        printf("%d;", result[i]);
+    }
+    printf("\n");
+    fflush(stdout);
 }

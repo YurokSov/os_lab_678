@@ -11,4 +11,6 @@ node_status node_start();
 
 node_status execute_command(mm_command* data);
 
+#define MAX_OCCURENCES 1024
+
 #endif

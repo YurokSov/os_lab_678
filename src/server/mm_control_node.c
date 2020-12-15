@@ -11,8 +11,8 @@ static zctx_t context;
 static zsock_t ping_sub;
 static zsock_t root_pub;
 
-static int recv_timeout_ms = 1000;
-static int node_connect_timeout_ms = 1000;
+static int recv_timeout_ms = 100;
+static int node_connect_timeout_ms = 100;
 
 mm_code mm_init_control_node() {
     context = zmq_ctx_new();
@@ -48,20 +48,30 @@ mm_code mm_deinit_control_node() {
 }
 
 mm_code mm_send_rebind(int id, int target_id) {
-    //TODO
+    mm_cmd sent_cmd;
+    sent_cmd.id = id;
+    sent_cmd.cmd = mmc_rebind;
+    sent_cmd.length = 4;
+    sent_cmd.buffer.temp_id = target_id;
+    zmq_msg_t zmqmsg;
+    zmq_msg_init_size(&zmqmsg, sizeof(mm_cmd));
+    memcpy(zmq_msg_data(&zmqmsg), &sent_cmd, sizeof(mm_cmd));
+    mm_cmd* test = zmq_msg_data(&zmqmsg);
+    int send = zmq_msg_send(&zmqmsg, root_pub, 0);
+    zmq_msg_close(&zmqmsg);
     return mmr_ok;
 }
 
 mm_code mm_send_relax() {
-    //TODO
-    return mmr_ok;
-}
-
-mm_code mm_send_create(int id, int p_id) {
-    return mmr_ok;
-}
-
-mm_code mm_send_remove(int id, int p_id) {
+    mm_cmd sent_cmd;
+    sent_cmd.cmd = mmc_relax;
+    sent_cmd.length = 0;
+    zmq_msg_t zmqmsg;
+    zmq_msg_init_size(&zmqmsg, sizeof(mm_cmd));
+    memcpy(zmq_msg_data(&zmqmsg), &sent_cmd, sizeof(mm_cmd));
+    mm_cmd* test = zmq_msg_data(&zmqmsg);
+    int send = zmq_msg_send(&zmqmsg, root_pub, 0);
+    zmq_msg_close(&zmqmsg);
     return mmr_ok;
 }
 

@@ -22,6 +22,8 @@ parse_status parse_command(cmd_enum* cmd) {
         *cmd = ce_exec;
     else if (!strcmp(command, "pingall"))
         *cmd = ce_pingall;
+    else if (!strcmp(command, "print"))
+        *cmd = ce_print;
     else
         status = pse_error;
     free(command);
@@ -72,6 +74,10 @@ parse_status parse_pingall(pingall_cmd* cmd) {
     return pse_ok;
 }
 
+parse_status parse_print(pingall_cmd* cmd) {
+    return pse_ok;
+}
+
 parse_status get_cmd_info(cmd_enum* cmd, command_u* cmd_info) {
     parse_status status;
     switch (*cmd) {
@@ -86,6 +92,9 @@ parse_status get_cmd_info(cmd_enum* cmd, command_u* cmd_info) {
         break;
     case ce_pingall:
         status = parse_pingall(&(cmd_info->pingall));
+        break;
+    case ce_print:
+        status = parse_print(&(cmd_info->pingall));
         break;
     default:
         __builtin_unreachable();

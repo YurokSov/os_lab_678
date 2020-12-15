@@ -2,7 +2,10 @@
 
 extern "C" {
 #include "server/mm_control_node.h"
+#include "utils/logger.h"
 }
+
+#include <unistd.h>
 
 // получить pid корня - начало
 int32_t avl_tree::get_root_pid() {

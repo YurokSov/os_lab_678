@@ -11,10 +11,6 @@ mm_code mm_send_rebind(int id, int target_id);
 
 mm_code mm_send_relax();
 
-mm_code mm_send_create(int id, int p_id);
-
-mm_code mm_send_remove(int id, int p_id);
-
 mm_code mm_send_execute(mm_command* cmd, int id);
 
 mm_code mm_send_pingall(int root_id, int* alive, int* len);

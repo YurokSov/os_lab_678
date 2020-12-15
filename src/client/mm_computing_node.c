@@ -31,6 +31,7 @@ mm_code mm_init_computing_node(int id, int p_id) {
     //LOG(LL_DEBUG, "inside init node, p_id = %d, id = %d", p_id, id);
     this_p_id = p_id;
     this_id = id;
+    temp_id = this_p_id;
     context = zmq_ctx_new();
     CTX_CREAT_ERR_CHK(context);
     psock_s = zmq_socket(context, ZMQ_SUB);
@@ -39,13 +40,13 @@ mm_code mm_init_computing_node(int id, int p_id) {
     SETSOCKOPT_ERR_CHK(psock_s, zmq_setsockopt(psock_s, ZMQ_CONNECT_TIMEOUT, &node_connect_timeout_ms, sizeof node_connect_timeout_ms));
 
     if (id > p_id) {
-        if (snprintf(parent_endpoint + sizeof SLAVE_PREFIX - 1, SOCK_BUF_LEN, "%d-right", p_id) == 0) {
+        if (sprintf(parent_endpoint + sizeof SLAVE_PREFIX - 1, "%d-right", p_id) == 0) {
             LOG(LL_ERROR, "Bad parent id!");
             return mmr_bad_params;
         }
     }
     else {
-        if (snprintf(parent_endpoint + sizeof SLAVE_PREFIX - 1, SOCK_BUF_LEN, "%d-left", p_id) == 0) {
+        if (sprintf(parent_endpoint + sizeof SLAVE_PREFIX - 1, "%d-left", p_id) == 0) {
             LOG(LL_ERROR, "Bad parent id!");
             return mmr_bad_params;
         }
@@ -55,13 +56,13 @@ mm_code mm_init_computing_node(int id, int p_id) {
 
     lsock_p = zmq_socket(context, ZMQ_PUB);
     SOCK_CREAT_ERR_CHK(lsock_p);
-    snprintf(left_endpoint + sizeof SLAVE_PREFIX - 1, SOCK_BUF_LEN, "%d-left", id);
+    sprintf(left_endpoint + sizeof SLAVE_PREFIX - 1, "%d-left", id);
     SOCK_BIND_ERR_CHK(lsock_p, zmq_bind(lsock_p, left_endpoint));
     LOG(LL_DEBUG, "lsock_p of %d is bound to left at %s", id, left_endpoint);
 
     rsock_p = zmq_socket(context, ZMQ_PUB);
     SOCK_CREAT_ERR_CHK(rsock_p);
-    snprintf(right_endpoint + sizeof SLAVE_PREFIX - 1, SOCK_BUF_LEN, "%d-right", id);
+    sprintf(right_endpoint + sizeof SLAVE_PREFIX - 1, "%d-right", id);
     SOCK_BIND_ERR_CHK(rsock_p, zmq_bind(rsock_p, right_endpoint));
     LOG(LL_DEBUG, "rsock_p of %d is bound to right at %s", id, right_endpoint);
 
@@ -124,7 +125,7 @@ mm_code mm_pass_relax() {
         zmq_msg_t zmqmsg;
         zmq_msg_init_size(&zmqmsg, sizeof(mm_cmd));
         memcpy(zmq_msg_data(&zmqmsg), &sent_cmd, sizeof(mm_cmd));
-        LOG(LL_DEBUG, "SENDING L relax from %d", this_id);
+        //LOG(LL_DEBUG, "SENDING L relax from %d", this_id);
         zmq_msg_send(&zmqmsg, lsock_p, 0);
         zmq_msg_close(&zmqmsg);
     }
@@ -135,21 +136,25 @@ mm_code mm_pass_relax() {
         zmq_msg_t zmqmsg;
         zmq_msg_init_size(&zmqmsg, sizeof(mm_cmd));
         memcpy(zmq_msg_data(&zmqmsg), &sent_cmd, sizeof(mm_cmd));
-        LOG(LL_DEBUG, "SENDING R relax from %d", this_id);
+        //LOG(LL_DEBUG, "SENDING R relax from %d", this_id);
         zmq_msg_send(&zmqmsg, rsock_p, 0);
         zmq_msg_close(&zmqmsg);
     }
     {
-        LOG(LL_DEBUG, "RELAX TEMP_ID IN NODE %d FROM %d TO %d", this_id, temp_id);
+        LOG(LL_DEBUG, "RELAX TEMP_ID IN NODE %d FROM %d TO %d", this_id, this_p_id, temp_id);
         if (this_p_id != temp_id) {
+            LOG(LL_DEBUG, "RELAXING>........");
             SOCK_DISCONNECT_ERR_CHK(psock_s, zmq_disconnect(psock_s, parent_endpoint));
             if (this_id < this_p_id)
-                snprintf(parent_endpoint + sizeof SLAVE_PREFIX - 1, SOCK_BUF_LEN, "%d-left", temp_id);
+                sprintf(parent_endpoint + sizeof SLAVE_PREFIX - 1, "%d-left", temp_id);
             else
-                snprintf(parent_endpoint + sizeof SLAVE_PREFIX - 1, SOCK_BUF_LEN, "%d-right", temp_id);
+                sprintf(parent_endpoint + sizeof SLAVE_PREFIX - 1, "%d-right", temp_id);
             SOCK_CONNECT_ERR_CHK(psock_s, zmq_connect(psock_s, parent_endpoint));
+            LOG(LL_DEBUG, "Node %d psock_s connected to %s", this_id, parent_endpoint);
         }
-        LOG(LL_DEBUG, "Node %d psock_s connected to %s", this_id, parent_endpoint);
+        else {
+            LOG(LL_DEBUG, "NO RELAXING NEEDED!!!");
+        }
     }
 }
 

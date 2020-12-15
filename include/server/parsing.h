@@ -4,7 +4,7 @@
 #include "../core/defines.h"
 
 typedef enum cmd_enum {
-    ce_create, ce_remove, ce_exec, ce_pingall,
+    ce_create, ce_remove, ce_exec, ce_pingall, ce_print,
 } cmd_enum;
 
 typedef enum parse_status {
@@ -31,11 +31,15 @@ typedef struct exec_cmd {
 typedef struct pingall_cmd {
 } pingall_cmd;
 
+typedef struct print_cmd {
+} print_cmd;
+
 typedef union command_u {
     create_cmd create;
     remove_cmd remove;
     exec_cmd exec;
     pingall_cmd pingall;
+    print_cmd print;
 } command_u;
 
 parse_status parse_command(cmd_enum* cmd);
