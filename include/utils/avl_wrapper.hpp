@@ -17,3 +17,5 @@ extern "C" bool get_path(avl_tree* tree, int id, int* path_len, int* path);
 extern "C" void print_tree(avl_tree* tree);
 
 extern "C" int get_root_pid(avl_tree* tree);
+
+extern "C" void delete_subtree(avl_tree* tree, int* ids, int len);

@@ -17,20 +17,22 @@ static struct avl_tree* tree_ptr;
 
 static node ntable[MAX_NODES];
 
-void sigint_handler()
-{
-    LOG(LL_FATAL, "SIGINT");
+void final() {
     kill_childs();
     deinit_control_node();
     exit(EXIT_SUCCESS);
 }
 
+void sigint_handler()
+{
+    LOG(LL_FATAL, "SIGINT");
+    final();
+}
+
 void sigsegv_handler()
 {
     LOG(LL_FATAL, "SIGSEGV");
-    kill_childs();
-    deinit_control_node();
-    exit(EXIT_SUCCESS);
+    final();
 }
 
 bool init_control_node() {
@@ -55,7 +57,7 @@ execute_status execute_create(create_cmd* cmd_info, void** result) {
     else {
         if (!add_to_tree(tree_ptr, cmd_info->id)) {
             LOG(LL_FATAL, "bad tree insert!");
-            exit(EXIT_FAILURE);
+            final(EXIT_FAILURE);
         }
         ntable[cmd_info->id].is_alive = true;
         ntable[cmd_info->id].info.id = cmd_info->id;
@@ -86,13 +88,13 @@ execute_status execute_create(create_cmd* cmd_info, void** result) {
 
 execute_status execute_remove(remove_cmd* cmd_info, void** result) {
     execute_status status = es_ok;
-    LOG(LL_NOTE, "Killing child with id: %d", cmd_info->id);
     if (ntable[cmd_info->id].is_alive) {
         printf("Ok\n");
-        kill_child(ntable[cmd_info->id].info.pid);
         if (!remove_from_tree(tree_ptr, cmd_info->id))
             LOG(LL_ERROR, "REMOVE %d from tree ERROR!");
-
+        sleep(1);
+        LOG(LL_NOTE, "Killing child with id: %d", cmd_info->id);
+        kill_child(ntable[cmd_info->id].info.pid);
         ntable[cmd_info->id].is_alive = false;
     }
     else {
@@ -150,15 +152,27 @@ execute_status execute_pingall(pingall_cmd* cmd_info, void** result) {
             ntable[alive[i]].is_alive = true;
         }
         bool flag = true;
+        int* to_delete = malloc(MAX_NODES * sizeof(int));
+        int num_to_delete = 0;
         for (int i = 0; i < MAX_NODES; ++i) {
             if (is_used[i] && !ntable[i].is_alive) {
                 printf("%d;", i);
-                kill_child(ntable[i].info.pid);
-                if (!remove_from_tree(tree_ptr, ntable[i].info.id))
-                    LOG(LL_ERROR, "REMOVE %d from tree ERROR!");
+                to_delete[num_to_delete] = i;
+                num_to_delete++;
+                //TODO delete subtree
+                // if (!remove_from_tree(tree_ptr, ntable[i].info.id))
+                //     LOG(LL_ERROR, "REMOVE %d from tree ERROR!");
                 flag = false;
             }
         }
+        if (!flag) {
+            delete_subtree(tree_ptr, to_delete, num_to_delete);
+            sleep(1);
+            for (int i = 0; i < num_to_delete; ++i) {
+                kill_child(ntable[to_delete[i]].info.pid);
+            }
+        }
+        free(to_delete);
         if (flag) {
             printf("-1");
         }
@@ -172,6 +186,7 @@ execute_status execute_pingall(pingall_cmd* cmd_info, void** result) {
 
 execute_status execute_print(print_cmd* cmd_info) {
     print_tree(tree_ptr);
+    return es_ok;
 }
 
 execute_status execute_cmd(cmd_enum* cmd, command_u* cmd_info, void** result) {

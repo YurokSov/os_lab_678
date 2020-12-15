@@ -26,7 +26,7 @@
 #define LL_NONE -1
 
 #ifndef UD_LOG_LEVEL
-#define UD_LOG_LEVEL LL_DEBUG
+#define UD_LOG_LEVEL LL_WARNING
 #endif
 
 #ifndef UD_LOG_FILE

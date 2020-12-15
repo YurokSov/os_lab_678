@@ -34,7 +34,7 @@ mm_code mm_init_control_node() {
 
 mm_code mm_deinit_control_node() {
     SOCK_UNBIND_ERR_CHK(ping_sub, zmq_unbind(ping_sub, MASTER_PING));
-    SOCK_UNBIND_ERR_CHK(root_pub, zmq_unbind(ping_sub, MASTER_ROOT));
+    SOCK_UNBIND_ERR_CHK(root_pub, zmq_unbind(root_pub, MASTER_ROOT));
     SOCK_CLOSE_ERR_CHK(ping_sub, zmq_close(ping_sub));
     SOCK_CLOSE_ERR_CHK(root_pub, zmq_close(root_pub));
     do {
@@ -48,6 +48,7 @@ mm_code mm_deinit_control_node() {
 }
 
 mm_code mm_send_rebind(int id, int target_id) {
+    LOG(LL_NOTE, "SEND REBIND TO {%d;%d}", id, target_id);
     mm_cmd sent_cmd;
     sent_cmd.id = id;
     sent_cmd.cmd = mmc_rebind;
@@ -63,6 +64,7 @@ mm_code mm_send_rebind(int id, int target_id) {
 }
 
 mm_code mm_send_relax() {
+    LOG(LL_NOTE, "SEND RELAX TO ALL");
     mm_cmd sent_cmd;
     sent_cmd.cmd = mmc_relax;
     sent_cmd.length = 0;

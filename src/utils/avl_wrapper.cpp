@@ -1,5 +1,9 @@
 #include "utils/avl_wrapper.hpp"
 
+extern "C" {
+#include "server/mm_control_node.h"
+}
+
 #define MAX_PATH_LEN 48
 
 static int buffer[48];
@@ -15,11 +19,15 @@ bool deinit_avl(avl_tree* tree) {
 }
 
 bool add_to_tree(avl_tree* tree, int id) {
-    return tree->insert(id);
+    int val = tree->insert(id);
+    mm_send_relax();
+    return val;
 }
 
 bool remove_from_tree(avl_tree* tree, int id) {
-    return tree->remove(id);
+    int val = tree->remove(id);
+    mm_send_relax();
+    return val;
 }
 
 int get_parent_id(avl_tree* tree, int id) {
@@ -41,4 +49,9 @@ void print_tree(struct avl_tree* tree) {
 
 int get_root_pid(avl_tree* tree) {
     return tree->get_root_pid();
+}
+
+void delete_subtree(avl_tree* tree, int* ids, int len) {
+    tree->delete_sub_tree(ids, len);
+    return;
 }

@@ -52,24 +52,24 @@ mm_code mm_init_computing_node(int id, int p_id) {
         }
     }
     SOCK_CONNECT_ERR_CHK(psock_s, zmq_connect(psock_s, parent_endpoint));
-    LOG(LL_DEBUG, "psock_s of %d is connected to parent at %s", id, parent_endpoint);
+    //LOG(LL_DEBUG, "psock_s of %d is connected to parent at %s", id, parent_endpoint);
 
     lsock_p = zmq_socket(context, ZMQ_PUB);
     SOCK_CREAT_ERR_CHK(lsock_p);
     sprintf(left_endpoint + sizeof SLAVE_PREFIX - 1, "%d-left", id);
     SOCK_BIND_ERR_CHK(lsock_p, zmq_bind(lsock_p, left_endpoint));
-    LOG(LL_DEBUG, "lsock_p of %d is bound to left at %s", id, left_endpoint);
+    //LOG(LL_DEBUG, "lsock_p of %d is bound to left at %s", id, left_endpoint);
 
     rsock_p = zmq_socket(context, ZMQ_PUB);
     SOCK_CREAT_ERR_CHK(rsock_p);
     sprintf(right_endpoint + sizeof SLAVE_PREFIX - 1, "%d-right", id);
     SOCK_BIND_ERR_CHK(rsock_p, zmq_bind(rsock_p, right_endpoint));
-    LOG(LL_DEBUG, "rsock_p of %d is bound to right at %s", id, right_endpoint);
+    //LOG(LL_DEBUG, "rsock_p of %d is bound to right at %s", id, right_endpoint);
 
     ping_sock = zmq_socket(context, ZMQ_PUB);
     SOCK_CREAT_ERR_CHK(ping_sock);
     SOCK_CONNECT_ERR_CHK(ping_sock, zmq_connect(ping_sock, MASTER_PING));
-    LOG(LL_DEBUG, "ID %d CONNECTED TO PING_SUB ON %s", id, MASTER_PING);
+    //LOG(LL_DEBUG, "ID %d CONNECTED TO PING_SUB ON %s", id, MASTER_PING);
     return mmr_ok;
 }
 
@@ -93,7 +93,7 @@ mm_code mm_deinit_computing_node() {
 
 mm_code mm_pass_rebind(int id, mm_command* cmd) {
     if (this_id == id) {
-        LOG(LL_DEBUG, "SET TEMP_ID IN NODE %d TO %d", this_id, cmd->temp_id);
+        //LOG(LL_DEBUG, "SET TEMP_ID IN NODE %d TO %d", this_id, cmd->temp_id);
         temp_id = cmd->temp_id;
     }
     else {
@@ -106,11 +106,11 @@ mm_code mm_pass_rebind(int id, mm_command* cmd) {
         zmq_msg_init_size(&zmqmsg, sizeof(mm_cmd));
         memcpy(zmq_msg_data(&zmqmsg), &sent_cmd, sizeof(mm_cmd));
         if (id < this_id) {
-            LOG(LL_DEBUG, "sent rebind(%d) from %d to left", id, this_id);
+            //LOG(LL_DEBUG, "sent rebind(%d) from %d to left", id, this_id);
             zmq_msg_send(&zmqmsg, lsock_p, 0);
         }
         else {
-            LOG(LL_DEBUG, "sent rebind(%d) from %d to right", id, this_id);
+            //LOG(LL_DEBUG, "sent rebind(%d) from %d to right", id, this_id);
             zmq_msg_send(&zmqmsg, rsock_p, 0);
         }
         zmq_msg_close(&zmqmsg);
@@ -141,19 +141,20 @@ mm_code mm_pass_relax() {
         zmq_msg_close(&zmqmsg);
     }
     {
-        LOG(LL_DEBUG, "RELAX TEMP_ID IN NODE %d FROM %d TO %d", this_id, this_p_id, temp_id);
+        //LOG(LL_DEBUG, "RELAX TEMP_ID IN NODE %d FROM %d TO %d", this_id, this_p_id, temp_id);
         if (this_p_id != temp_id) {
-            LOG(LL_DEBUG, "RELAXING>........");
+            //LOG(LL_DEBUG, "RELAXING>........");
             SOCK_DISCONNECT_ERR_CHK(psock_s, zmq_disconnect(psock_s, parent_endpoint));
-            if (this_id < this_p_id)
+            if (this_id < temp_id)
                 sprintf(parent_endpoint + sizeof SLAVE_PREFIX - 1, "%d-left", temp_id);
             else
                 sprintf(parent_endpoint + sizeof SLAVE_PREFIX - 1, "%d-right", temp_id);
             SOCK_CONNECT_ERR_CHK(psock_s, zmq_connect(psock_s, parent_endpoint));
-            LOG(LL_DEBUG, "Node %d psock_s connected to %s", this_id, parent_endpoint);
+            //LOG(LL_DEBUG, "Node %d psock_s connected to %s", this_id, parent_endpoint);
+            this_p_id = temp_id;
         }
         else {
-            LOG(LL_DEBUG, "NO RELAXING NEEDED!!!");
+            //LOG(LL_DEBUG, "NO RELAXING NEEDED!!!");
         }
     }
 }
@@ -178,11 +179,11 @@ mm_code mm_pass_execute(int id, mm_command* msg) {
         zmq_msg_init_size(&zmqmsg, sizeof(mm_cmd));
         memcpy(zmq_msg_data(&zmqmsg), &sent_cmd, sizeof(mm_cmd));
         if (id < this_id) {
-            LOG(LL_DEBUG, "sent exec(%d) from %d to left", id, this_id);
+            //LOG(LL_DEBUG, "sent exec(%d) from %d to left", id, this_id);
             zmq_msg_send(&zmqmsg, lsock_p, 0);
         }
         else {
-            LOG(LL_DEBUG, "sent exec(%d) from %d to right", id, this_id);
+            //LOG(LL_DEBUG, "sent exec(%d) from %d to right", id, this_id);
             zmq_msg_send(&zmqmsg, rsock_p, 0);
         }
         zmq_msg_close(&zmqmsg);
@@ -215,7 +216,7 @@ mm_code mm_pass_pingall() {
         int* data = zmq_msg_data(&pingmsg);
         *data = this_id;
         zmq_msg_send(&pingmsg, ping_sock, 0);
-        LOG(LL_DEBUG, "ID %d SENT PING MSG TO PARENT!", this_id);
+        //LOG(LL_DEBUG, "ID %d SENT PING MSG TO PARENT!", this_id);
         zmq_msg_close(&pingmsg);
     }
 }
