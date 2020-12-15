@@ -10,7 +10,7 @@ link_libraries(pthread)
 find_library(rt REQUIRED)
 link_libraries(rt)
 
-add_definitions("-O2")
+add_definitions("-g3")
 
 # include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/include)

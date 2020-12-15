@@ -177,6 +177,7 @@ execute_status execute_pingall(pingall_cmd* cmd_info, void** result) {
             printf("-1");
         }
         printf("\n");
+        free(alive);
     }
     else {
         LOG(LL_NOTE, "Nothing to ping...");
@@ -232,12 +233,12 @@ void kill_child(int pid) {
 
 void kill_childs() {
     for (int i = 0; i < MAX_NODES; ++i) {
-        if (ntable[i].is_alive) {
-            if (kill(ntable[i].info.pid, SIGTERM) == ERROR_CODE) {
-                LOG(LL_ERROR, "Error while killing child node!");
-                perror("ERROR");
-            }
+        //if (ntable[i].is_alive) {
+        if (kill(ntable[i].info.pid, SIGTERM) == ERROR_CODE) {
+            LOG(LL_ERROR, "Error while killing child node!");
+            perror("ERROR");
         }
+        //}
     }
     int status;
     pid_t wpid;
