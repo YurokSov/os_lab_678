@@ -69,7 +69,7 @@ mm_code mm_init_computing_node(int id, int p_id) {
     ping_sock = zmq_socket(context, ZMQ_PUB);
     SOCK_CREAT_ERR_CHK(ping_sock);
     SOCK_CONNECT_ERR_CHK(ping_sock, zmq_connect(ping_sock, MASTER_PING));
-    //LOG(LL_DEBUG, "ID %d CONNECTED TO PING_SUB ON %s", id, MASTER_PING);
+    LOG(LL_DEBUG, "ID %d CONNECTED TO PING_SUB ON %s", id, MASTER_PING);
     return mmr_ok;
 }
 
@@ -141,7 +141,6 @@ mm_code mm_pass_relax() {
         zmq_msg_close(&zmqmsg);
     }
     {
-        //
         if (this_p_id != temp_id) {
             //LOG(LL_DEBUG, "RELAXING>........");
             //LOG(LL_DEBUG, "RELAX TEMP_ID IN NODE %d FROM %d TO %d", this_id, this_p_id, temp_id);
@@ -245,19 +244,19 @@ void mm_recv_command() {
     //LOG(LL_DEBUG, "TEST %d {%d,%d,%s,%s}", id, buffer.pattern_len, buffer.text_len, buffer.pattern, buffer.text);
     switch (cmd) {
     case mmc_rebind:
-        LOG(LL_DEBUG, "Node %d Recieved REBIND!", this_id);
+        //LOG(LL_DEBUG, "Node %d Recieved REBIND!", this_id);
         mm_pass_rebind(id, &buffer);
         break;
     case mmc_relax:
-        LOG(LL_DEBUG, "Node %d Recieved RELAX!", this_id);
+        //LOG(LL_DEBUG, "Node %d Recieved RELAX!", this_id);
         mm_pass_relax();
         break;
     case mmc_execute:
-        LOG(LL_DEBUG, "Node %d Recieved EXEC!", this_id);
+        //LOG(LL_DEBUG, "Node %d Recieved EXEC!", this_id);
         mm_pass_execute(id, &buffer);
         break;
     case mmc_pingall:
-        LOG(LL_DEBUG, "Node %d Recieved PINGALL!", this_id);
+        //LOG(LL_DEBUG, "Node %d Recieved PINGALL!", this_id);
         mm_pass_pingall();
         break;
     default:

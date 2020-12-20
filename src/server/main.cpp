@@ -24,11 +24,11 @@ int main_repl() {
     void* result;
 
     cmd_enum cmd;
-    while (status == pse_ok && parse_command(&cmd) == pse_ok) {
+    while (status == pse_ok) {
+        if ((status = parse_command(&cmd)) == pse_eof)
+            break;
         get_cmd_info(&cmd, &cmd_info);
         execute_cmd(&cmd, &cmd_info, &result);
-        //print_result(result);
-        //sleep(1);
     }
     kill_childs();
     return true;

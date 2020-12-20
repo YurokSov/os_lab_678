@@ -1,26 +1,29 @@
-#pragma once
+#ifndef INCLUDE_AVL_HPP
+#define INCLUDE_AVL_HPP
+
 #include <iostream>
 #include <vector>
 #include <algorithm>
 #include <string>
 #include <memory>
 #include <cstdint>
-#include <zmq.h>
 
-/**
- * структура для процесса-вершины дерева с укаанным id
- */
+struct tree_node;
+
+using pptr = std::weak_ptr<tree_node>;
+using cptr = std::shared_ptr<tree_node>;
+
 struct tree_node {
-    int32_t pid;
+    int32_t id;
     int32_t balance;
-    std::weak_ptr<tree_node> parent;
-    std::shared_ptr<tree_node> left;
-    std::shared_ptr<tree_node> right;
+    pptr parent;
+    cptr left;
+    cptr right;
 
-    tree_node() : pid(-1), balance(0), left(nullptr), right(nullptr) {
+    tree_node() : id(-1), balance(0), left(nullptr), right(nullptr) {
         parent.lock() = nullptr;
     }
-    tree_node(int32_t pid) : pid(pid), balance(0), left(nullptr), right(nullptr) {
+    tree_node(int32_t id) : id(id), balance(0), left(nullptr), right(nullptr) {
         parent.lock() = nullptr;
     }
     ~tree_node() = default;
@@ -28,79 +31,35 @@ struct tree_node {
 
 class avl_tree {
 private:
-    // корень дерева
-    std::shared_ptr<tree_node> _root;
-    // рекурсивный поиск по дереву, возвращает указатель на искомый узел или nullptr
-    std::shared_ptr<tree_node> _find(int32_t pid, std::shared_ptr<tree_node> node);
-    // рекурсивынй поиск с обновлением пути
-    bool _search(int32_t pid, int32_t* path, std::shared_ptr<tree_node> node, int32_t* height);
-    // рекурсивная функция для вставки
-    bool _insert(int32_t pid, std::shared_ptr<tree_node> node);
-    // левый поворот
-    void _left_rotate(std::shared_ptr<tree_node> node);
-    // правый поворот
-    void _right_rotate(std::shared_ptr<tree_node> node);
-    // перебалансировка вершины с балансом равным 2 по модулю
-    std::shared_ptr<tree_node> _rebalance(std::shared_ptr<tree_node> node);
-    // удаление всего поддерева с корнем в вершине node
-    void _delete_sub_tree(std::shared_ptr<tree_node> node);
-    // рекурсивно перестраиваем дерево после удаления целого поддерева
-    void _rec_reconstruct(std::shared_ptr<tree_node>& new_root, std::shared_ptr<tree_node> node);
-    // функция, вызывающая _rec_reconstruct, она обновляет корень
+    cptr _root;
+
+    cptr _find(int32_t id, cptr node);
+    bool _insert(int32_t id, cptr node);
+    void _go_up_insert(cptr node, cptr prev);
+
+    void _remove(cptr node);
+    void _go_up_remove(cptr node, cptr prev);
+
+    void _left_rotate(cptr node);
+    void _right_rotate(cptr node);
+    cptr _rebalance(cptr node);
+
+    void _delete_sub_tree(cptr node);
+    void _rec_reconstruct(cptr& new_root, cptr node);
     void _reconstruct();
-    // рекурсивное обновление баланса для вставки
-    void _go_up_insert(std::shared_ptr<tree_node> node, std::shared_ptr<tree_node> prev);
-    // вывод дерева на экран рекурсивно
-    void _print(const std::string& prefix, std::shared_ptr<tree_node> node, bool is_left, int32_t height);
-    // поиск и удаленеи вершины
-    void _remove(std::shared_ptr<tree_node> node);
-    // рекурсивное обновление баланса для удаления
-    void _go_up_remove(std::shared_ptr<tree_node> node, std::shared_ptr<tree_node> prev);
+
+    void _print(const std::string& prefix, cptr node, bool is_left, int32_t height);
 
 public:
-    /**
-     * конструктор по умолчанию
-     */
     avl_tree() : _root(nullptr) {};
-    /**
-     * поиск в дереве по id процесса
-     * возвращает вектор-путь от корневого процесса до искомого
-     * если искомый процесс не найден, то возвращаемый вектор имеет длину 0
-     */
-    bool search(int32_t pid, int32_t* path, int32_t* path_len);
-    /**
-     * вставка в дерево по id процесса
-     * в случае успеха вернет true
-     * в случае неуспеха вернет false
-     */
-    bool insert(int32_t pid);
-    /**
-     * печать дерева на экран
-     */
+
+    bool insert(int32_t id);
     void print();
-    /**
-     * удаление всего поддерва, корнем которого является процесс с указанным id
-     * в случае успеха дерево перебалансируется
-     * в случае, если такого процесса нет, то метод вернет false
-     */
-    bool delete_sub_tree(int32_t* pids, int32_t len);
-    /**
-     * удаление процесса с номером pid
-     * в случае неуспеха вернет false
-     */
-    bool remove(int32_t pid);
-    /**
-     * получить pid родителя
-     * в случае неуспеха вернется -1
-     */
-    int32_t get_parent_pid(int32_t pid);
-    /**
-     * получить pid корня
-     * в случае неудачи вернет -1
-     */
-    int32_t get_root_pid();
-    /**
-     * деструктор по умолчанию
-     */
+    bool destroy_trees(int32_t* pids, int32_t len);
+    bool remove(int32_t id);
+    int32_t get_parent_id(int32_t id);
+    int32_t get_root_id();
     ~avl_tree() = default;
 };
+
+#endif

@@ -20,6 +20,7 @@ static node ntable[MAX_NODES];
 void final() {
     kill_childs();
     deinit_control_node();
+    _LOG_DEINIT();
     exit(EXIT_SUCCESS);
 }
 
@@ -70,6 +71,7 @@ execute_status execute_create(create_cmd* cmd_info, void** result) {
             ntable[cmd_info->id].info.pid = fork_res;
             ntable[cmd_info->id].info.ppid = getpid();
 
+            sleep(1);
             printf("Ok: %d\n", fork_res);
         }
         else if (fork_res == 0) {
@@ -121,6 +123,9 @@ execute_status execute_exec(exec_cmd* cmd_info, void** result) {
             status = es_msgq_error;
             printf("Error: node unavailable!\n");
         }
+        else {
+            sleep(1);
+        }
     }
     else {
         status = es_bad_params;
@@ -131,15 +136,13 @@ execute_status execute_exec(exec_cmd* cmd_info, void** result) {
 
 execute_status execute_pingall(pingall_cmd* cmd_info, void** result) {
     execute_status status = es_ok;
-    int root_id = get_root_pid(tree_ptr);
+    int root_id = get_root_id(tree_ptr);
     if (root_id != -1) {
         int* alive = malloc(sizeof(int) * MAX_NODES);
         int len = 0;
         if (mm_send_pingall(root_id, alive, &len) != mmr_ok) {
             status = es_msgq_error;
         }
-        printf("Ok:");
-
         bool is_used[MAX_NODES];
         for (int i = 0; i < MAX_NODES; ++i) {
             if (ntable[i].is_alive)
@@ -154,14 +157,12 @@ execute_status execute_pingall(pingall_cmd* cmd_info, void** result) {
         bool flag = true;
         int* to_delete = malloc(MAX_NODES * sizeof(int));
         int num_to_delete = 0;
+        printf("Ok:");
         for (int i = 0; i < MAX_NODES; ++i) {
             if (is_used[i] && !ntable[i].is_alive) {
                 printf("%d;", i);
                 to_delete[num_to_delete] = i;
                 num_to_delete++;
-                //TODO delete subtree
-                // if (!remove_from_tree(tree_ptr, ntable[i].info.id))
-                //     LOG(LL_ERROR, "REMOVE %d from tree ERROR!");
                 flag = false;
             }
         }
@@ -210,12 +211,6 @@ execute_status execute_cmd(cmd_enum* cmd, command_u* cmd_info, void** result) {
         status = execute_print(&(cmd_info->print));
         break;
     }
-    if (status == es_ok) {
-        LOG(LL_NOTE, "Execution status: OK");
-    }
-    else {
-        LOG(LL_NOTE, "Execution status: ERROR");
-    }
 
     return status;
 }
@@ -232,13 +227,12 @@ void kill_child(int pid) {
 }
 
 void kill_childs() {
+    LOG(LL_DEBUG, "CLEANING...");
     for (int i = 0; i < MAX_NODES; ++i) {
-        //if (ntable[i].is_alive) {
         if (kill(ntable[i].info.pid, SIGTERM) == ERROR_CODE) {
             LOG(LL_ERROR, "Error while killing child node!");
             perror("ERROR");
         }
-        //}
     }
     int status;
     pid_t wpid;

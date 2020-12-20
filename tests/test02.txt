@@ -1,0 +1,17 @@
+create 4
+print
+create 2
+print
+create 6
+print
+create 1
+create 3
+create 5
+print
+exec 1 asdasdasd as
+pingall
+remove 6
+print
+pingall
+exec 6 asdasd d
+exec 5 aaaaaa a

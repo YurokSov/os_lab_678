@@ -1,0 +1,13 @@
+create 1
+create 3
+create 2
+print
+pingall
+exec 1 aaaba ab
+exec 2 aaaba ab
+exec 3 aaaba ab
+remove 2
+print
+pingall
+exec 1 asdasd das
+exec 3 asdasd das

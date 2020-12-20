@@ -2,22 +2,13 @@
 
 #include "core/ipc_mutex.h"
 
-//static pthread_mutex_t _log_mutex;
 static ipc_mutex _log_mutex;
-
-/**
- * @warning не потокобезопасный, только под unix
- */
 QWORD _GET_TIME_STAMP() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    //return tv.tv_sec * (QWORD)1000000 + tv.tv_usec;
     return tv.tv_sec * (QWORD)1000000 + tv.tv_usec;
 }
 
-/**
- * @warning не потокобезопасный
- */
 char* _GET_DATETIME() {
     char* buffer = malloc(_LOG_BUF_SIZE * sizeof(char));
     time_t now = time(0);
@@ -38,15 +29,6 @@ bool _LOG_INIT() {
     if (_log_mutex.obj == NULL) {
         return false;
     }
-    //if (_log_mutex.is_origin) {
-    //    printf("LOGGER: mutex origin in %d\n", getpid());
-    //}
-    // if (pthread_mutex_init(&_log_mutex, NULL))
-    // {
-    //     fprintf(stderr, "_LOG_INIT: mutex init failed\n");
-    //     perror("ERROR");
-    //     return false;
-    // }
     return true;
 }
 
@@ -54,20 +36,8 @@ bool _LOG_DEINIT() {
     if (ipc_mutex_destroy(&_log_mutex)) {
         return false;
     }
-    // if (pthread_mutex_destroy(&_log_mutex)) {
-    //     fprintf(stderr, "_LOG_DEINIT: mutex destroy failed\n");
-    //     perror("ERROR");
-    //     return false;
-    // }
     return true;
 }
-
-// bool _LOG_FINAL() {
-//     if (ipc_mutex_destroy(&_log_mutex)) {
-//         return false;
-//     }
-//     return true;
-// }
 
 void _LOG_WRITE(int level, const char* file, int line, const char* format, ...) {
     pthread_mutex_lock(_log_mutex.obj);

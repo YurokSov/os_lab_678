@@ -1,0 +1,10 @@
+create 1
+pingall
+print
+exec 1 abcdefgabcde bcd
+remove 1
+print
+exec 1 aaaaaa a
+create 2
+exec 2 ababaabb baa
+pingall

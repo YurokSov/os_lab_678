@@ -59,11 +59,9 @@ parse_status parse_exec(exec_cmd* cmd) {
         exit(BAD_ALLOC);
     }
 
-    printf("> ");
     if (scanf("%s", cmd->text) != 1)
         return pse_error;
     cmd->text_len = strlen(cmd->text);
-    printf("> ");
     if (scanf("%s", cmd->pattern) != 1)
         return pse_error;
     cmd->pattern_len = strlen(cmd->pattern);
@@ -97,8 +95,7 @@ parse_status get_cmd_info(cmd_enum* cmd, command_u* cmd_info) {
         status = parse_print(&(cmd_info->pingall));
         break;
     default:
-        __builtin_unreachable();
-        exit(-1);
+        LOG(LL_NOTE, "no such command!");
     }
     return status;
 }
